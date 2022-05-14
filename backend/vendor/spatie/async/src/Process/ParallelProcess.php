@@ -9,6 +9,7 @@ use Throwable;
 
 class ParallelProcess implements Runnable
 {
+    use ProcessCallbacks;
     protected $process;
     protected $id;
     protected $pid;
@@ -17,8 +18,6 @@ class ParallelProcess implements Runnable
     protected $errorOutput;
 
     protected $startTime;
-
-    use ProcessCallbacks;
 
     public function __construct(Process $process, int $id)
     {
@@ -42,9 +41,9 @@ class ParallelProcess implements Runnable
         return $this;
     }
 
-    public function stop(): self
+    public function stop($timeout = 0): self
     {
-        $this->process->stop(10, SIGKILL);
+        $this->process->stop($timeout, SIGKILL);
 
         return $this;
     }

@@ -4,24 +4,25 @@ namespace Doctrine\Tests\DBAL\Schema\Visitor;
 
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Tests\DBAL\MockBuilderProxy;
 use PHPUnit\Framework\TestCase;
 
 class SchemaSqlCollectorTest extends TestCase
 {
-    public function testCreateSchema() : void
+    public function testCreateSchema(): void
     {
-        $platformMock = $this->getMockBuilder(MySqlPlatform::class)
+        $platformMock = (new MockBuilderProxy($this->getMockBuilder(MySqlPlatform::class)))
             ->onlyMethods(['getCreateTableSql', 'getCreateSequenceSql', 'getCreateForeignKeySql'])
             ->getMock();
         $platformMock->expects($this->exactly(2))
                      ->method('getCreateTableSql')
-                     ->will($this->returnValue(['foo']));
+                     ->willReturn(['foo']);
         $platformMock->expects($this->exactly(1))
                      ->method('getCreateSequenceSql')
-                     ->will($this->returnValue('bar'));
+                     ->willReturn('bar');
         $platformMock->expects($this->exactly(1))
                      ->method('getCreateForeignKeySql')
-                     ->will($this->returnValue('baz'));
+                     ->willReturn('baz');
 
         $schema = $this->createFixtureSchema();
 
@@ -30,20 +31,20 @@ class SchemaSqlCollectorTest extends TestCase
         self::assertEquals(['foo', 'foo', 'bar', 'baz'], $sql);
     }
 
-    public function testDropSchema() : void
+    public function testDropSchema(): void
     {
-        $platformMock = $this->getMockBuilder(MySqlPlatform::class)
+        $platformMock = (new MockBuilderProxy($this->getMockBuilder(MySqlPlatform::class)))
             ->onlyMethods(['getDropTableSql', 'getDropSequenceSql', 'getDropForeignKeySql'])
             ->getMock();
         $platformMock->expects($this->exactly(2))
                      ->method('getDropTableSql')
-                     ->will($this->returnValue('tbl'));
+                     ->willReturn('tbl');
         $platformMock->expects($this->exactly(1))
                      ->method('getDropSequenceSql')
-                     ->will($this->returnValue('seq'));
+                     ->willReturn('seq');
         $platformMock->expects($this->exactly(1))
                      ->method('getDropForeignKeySql')
-                     ->will($this->returnValue('fk'));
+                     ->willReturn('fk');
 
         $schema = $this->createFixtureSchema();
 
@@ -52,7 +53,7 @@ class SchemaSqlCollectorTest extends TestCase
         self::assertEquals(['fk', 'seq', 'tbl', 'tbl'], $sql);
     }
 
-    public function createFixtureSchema() : Schema
+    public function createFixtureSchema(): Schema
     {
         $schema = new Schema();
         $tableA = $schema->createTable('foo');

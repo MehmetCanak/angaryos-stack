@@ -2,9 +2,7 @@
 
 namespace Spatie\Async\Tests;
 
-use Opis\Closure\SerializableClosure;
-use function Opis\Closure\serialize;
-use PHPUnit\Framework\TestCase;
+use Laravel\SerializableClosure\SerializableClosure;
 use Symfony\Component\Process\Process;
 
 class ChildRuntimeTest extends TestCase
@@ -31,6 +29,6 @@ class ChildRuntimeTest extends TestCase
 
         $process->wait();
 
-        $this->assertContains('child', $process->getOutput());
+        $this->assertStringContainsString('child', $process->getOutput());
     }
 }

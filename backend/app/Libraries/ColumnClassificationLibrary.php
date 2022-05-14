@@ -15,7 +15,7 @@ class ColumnClassificationLibrary
         if(strlen($column->column_table_relation_id) > 0)
         {
             if($relation == NULL) $relation = self::getRelationFromColumn($column);
-            if(!isset($params->relation)) $params->relation = $relation;
+            if(!isset($params->relation)) @$params->relation = $relation;
             
             if(strlen($relation->relation_table_id) > 0)
             {
@@ -52,7 +52,8 @@ class ColumnClassificationLibrary
         
         if($targetColumn == NULL) $targetColumn = self::getTargetColumnFromColumn($sourceColumn);
           
-        if($targetColumn->column_db_type_id == $sourceColumn->column_db_type_id)
+try {
+    if($targetColumn->column_db_type_id == $sourceColumn->column_db_type_id)
             $id = 0;
         else if($targetColumn->column_db_type_id == $intType && $sourceColumn->column_db_type_id == $jsonType)            
             $id = 1;
@@ -60,6 +61,9 @@ class ColumnClassificationLibrary
             $id = 2;
         else 
             abort(helper('response_error', 'relation_db_types.different.types'));
+}catch (\Exception $ex) {
+ dd(2, $sourceColumn, $ex);
+}
         
         $functionName = $prefix.'For'.$functions[$id];
         if(isset($pipe['ColumnClassificationLibraryDebug'])) dd('ColumnClassificationLibrary::relationDbTypes', $functionName);

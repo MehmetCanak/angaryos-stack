@@ -1,68 +1,73 @@
 <?php
+
+declare(strict_types=1);
+
 namespace GuzzleHttp\Tests\Psr7;
 
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Psr7\UriNormalizer;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\UriInterface;
 
 /**
  * @covers GuzzleHttp\Psr7\UriNormalizer
  */
-class UriNormalizerTest extends BaseTest
+class UriNormalizerTest extends TestCase
 {
-    public function testCapitalizePercentEncoding()
+    public function testCapitalizePercentEncoding(): void
     {
         $actualEncoding = 'a%c2%7A%5eb%25%fa%fA%Fa';
         $expectEncoding = 'a%C2%7A%5Eb%25%FA%FA%FA';
         $uri = (new Uri())->withPath("/$actualEncoding")->withQuery($actualEncoding);
 
-        $this->assertSame("/$actualEncoding?$actualEncoding", (string) $uri, 'Not normalized automatically beforehand');
+        self::assertSame("/$actualEncoding?$actualEncoding", (string) $uri, 'Not normalized automatically beforehand');
 
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::CAPITALIZE_PERCENT_ENCODING);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame("/$expectEncoding?$expectEncoding", (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame("/$expectEncoding?$expectEncoding", (string) $normalizedUri);
     }
 
     /**
      * @dataProvider getUnreservedCharacters
      */
-    public function testDecodeUnreservedCharacters($char)
+    public function testDecodeUnreservedCharacters(string $char): void
     {
-        $percentEncoded = '%'.bin2hex($char);
+        $percentEncoded = '%' . bin2hex($char);
         // Add encoded reserved characters to test that those are not decoded and include the percent-encoded
         // unreserved character both in lower and upper case to test the decoding is case-insensitive.
-        $encodedChars = $percentEncoded.'%2F%5B'.strtoupper($percentEncoded);
+        $encodedChars = $percentEncoded . '%2F%5B' . strtoupper($percentEncoded);
         $uri = (new Uri())->withPath("/$encodedChars")->withQuery($encodedChars);
 
-        $this->assertSame("/$encodedChars?$encodedChars", (string) $uri, 'Not normalized automatically beforehand');
+        self::assertSame("/$encodedChars?$encodedChars", (string) $uri, 'Not normalized automatically beforehand');
 
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::DECODE_UNRESERVED_CHARACTERS);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame("/$char%2F%5B$char?$char%2F%5B$char", (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame("/$char%2F%5B$char?$char%2F%5B$char", (string) $normalizedUri);
     }
 
-    public function getUnreservedCharacters()
+    public function getUnreservedCharacters(): iterable
     {
-        $unreservedChars = array_merge(range('a', 'z'), range('A', 'Z'), range('0', '9'), ['-', '.', '_', '~']);
+        $unreservedChars = array_merge(range('a', 'z'), range('A', 'Z'), range(0, 9), ['-', '.', '_', '~']);
 
         return array_map(function ($char) {
-            return [$char];
+            return [(string) $char];
         }, $unreservedChars);
     }
 
     /**
      * @dataProvider getEmptyPathTestCases
      */
-    public function testConvertEmptyPath($uri, $expected)
+    public function testConvertEmptyPath($uri, $expected): void
     {
         $normalizedUri = UriNormalizer::normalize(new Uri($uri), UriNormalizer::CONVERT_EMPTY_PATH);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame($expected, (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame($expected, (string) $normalizedUri);
     }
 
-    public function getEmptyPathTestCases()
+    public function getEmptyPathTestCases(): iterable
     {
         return [
             ['http://example.org', 'http://example.org/'],
@@ -71,93 +76,93 @@ class UriNormalizerTest extends BaseTest
         ];
     }
 
-    public function testRemoveDefaultHost()
+    public function testRemoveDefaultHost(): void
     {
         $uri = new Uri('file://localhost/myfile');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::REMOVE_DEFAULT_HOST);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('file:///myfile', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('file:///myfile', (string) $normalizedUri);
     }
 
-    public function testRemoveDefaultPort()
+    public function testRemoveDefaultPort(): void
     {
-        $uri = $this->getMockBuilder('Psr\Http\Message\UriInterface')->getMock();
-        $uri->expects($this->any())->method('getScheme')->will($this->returnValue('http'));
-        $uri->expects($this->any())->method('getPort')->will($this->returnValue(80));
-        $uri->expects($this->once())->method('withPort')->with(null)->will($this->returnValue(new Uri('http://example.org')));
+        $uri = $this->createMock(UriInterface::class);
+        $uri->expects(self::any())->method('getScheme')->willReturn('http');
+        $uri->expects(self::any())->method('getPort')->willReturn(80);
+        $uri->expects(self::once())->method('withPort')->with(null)->willReturn(new Uri('http://example.org'));
 
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::REMOVE_DEFAULT_PORT);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertNull($normalizedUri->getPort());
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertNull($normalizedUri->getPort());
     }
 
-    public function testRemoveDotSegments()
+    public function testRemoveDotSegments(): void
     {
         $uri = new Uri('http://example.org/../a/b/../c/./d.html');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::REMOVE_DOT_SEGMENTS);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('http://example.org/a/c/d.html', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('http://example.org/a/c/d.html', (string) $normalizedUri);
     }
 
-    public function testRemoveDotSegmentsOfAbsolutePathReference()
+    public function testRemoveDotSegmentsOfAbsolutePathReference(): void
     {
         $uri = new Uri('/../a/b/../c/./d.html');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::REMOVE_DOT_SEGMENTS);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('/a/c/d.html', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('/a/c/d.html', (string) $normalizedUri);
     }
 
-    public function testRemoveDotSegmentsOfRelativePathReference()
+    public function testRemoveDotSegmentsOfRelativePathReference(): void
     {
         $uri = new Uri('../c/./d.html');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::REMOVE_DOT_SEGMENTS);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('../c/./d.html', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('../c/./d.html', (string) $normalizedUri);
     }
 
-    public function testRemoveDuplicateSlashes()
+    public function testRemoveDuplicateSlashes(): void
     {
         $uri = new Uri('http://example.org//foo///bar/bam.html');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::REMOVE_DUPLICATE_SLASHES);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('http://example.org/foo/bar/bam.html', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('http://example.org/foo/bar/bam.html', (string) $normalizedUri);
     }
 
-    public function testSortQueryParameters()
+    public function testSortQueryParameters(): void
     {
         $uri = new Uri('?lang=en&article=fred');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::SORT_QUERY_PARAMETERS);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('?article=fred&lang=en', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('?article=fred&lang=en', (string) $normalizedUri);
     }
 
-    public function testSortQueryParametersWithSameKeys()
+    public function testSortQueryParametersWithSameKeys(): void
     {
         $uri = new Uri('?a=b&b=c&a=a&a&b=a&b=b&a=d&a=c');
         $normalizedUri = UriNormalizer::normalize($uri, UriNormalizer::SORT_QUERY_PARAMETERS);
 
-        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $normalizedUri);
-        $this->assertSame('?a&a=a&a=b&a=c&a=d&b=a&b=b&b=c', (string) $normalizedUri);
+        self::assertInstanceOf(UriInterface::class, $normalizedUri);
+        self::assertSame('?a&a=a&a=b&a=c&a=d&b=a&b=b&b=c', (string) $normalizedUri);
     }
 
     /**
      * @dataProvider getEquivalentTestCases
      */
-    public function testIsEquivalent($uri1, $uri2, $expected)
+    public function testIsEquivalent(string $uri1, string $uri2, bool $expected): void
     {
         $equivalent = UriNormalizer::isEquivalent(new Uri($uri1), new Uri($uri2));
 
-        $this->assertSame($expected, $equivalent);
+        self::assertSame($expected, $equivalent);
     }
 
-    public function getEquivalentTestCases()
+    public function getEquivalentTestCases(): iterable
     {
         return [
             ['http://example.org', 'http://example.org', true],

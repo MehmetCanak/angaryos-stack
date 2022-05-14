@@ -2,15 +2,19 @@
 
 namespace Doctrine\Tests\DBAL\Functional\Schema;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\DB2Platform;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\BooleanType;
 
 class Db2SchemaManagerTest extends SchemaManagerFunctionalTestCase
 {
-    /**
-     * @group DBAL-939
-     */
-    public function testGetBooleanColumn() : void
+    protected function supportsPlatform(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof DB2Platform;
+    }
+
+    public function testGetBooleanColumn(): void
     {
         $table = new Table('boolean_column_test');
         $table->addColumn('bool', 'boolean');
@@ -27,7 +31,7 @@ class Db2SchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertSame("That's a comment", $columns['bool_commented']->getComment());
     }
 
-    public function testListTableWithBinary() : void
+    public function testListTableWithBinary(): void
     {
         self::markTestSkipped('Binary data type is currently not supported on DB2 LUW');
     }

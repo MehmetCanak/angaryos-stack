@@ -10,16 +10,17 @@ name="{{ name }}" id="{{ name }}"
 <select *ngIf="showFilterTypesSelect"
     id="{{ name }}_filter_type" name="{{ name }}_filter_type" style="margin-top: 10px;"
     value="{{ filterType }}"
+    (change)="handleChange($event)"
     class="show-tick ms form-control">
     
     <option value="1">
-        içinde ... geçen
+        {{ 'içinde {0} geçen'.tr('...') }}
     </option>
     <option value="2">
-        ... ile başlayan
+        {{ '{0} ile başlayan'.tr('...') }}
     </option>
     <option value="3">
-        ... ile biten
+        {{ '{0} ile biten'.tr('...') }}
     </option>
     <option value="4">
         ==
@@ -28,6 +29,6 @@ name="{{ name }}" id="{{ name }}"
         !=
     </option>    
     <option value="6">
-        özel
+        {{ 'özel'.tr() }}
     </option>
 </select>

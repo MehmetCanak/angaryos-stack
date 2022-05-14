@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BaseHelper } from './base';
+import { LanguageHelper } from './language';
 import { SessionHelper } from './session';
 
 declare var $: any;
@@ -34,14 +35,6 @@ export class AeroThemeHelper
             $('.tooltip-inner').remove();
             $('[data-toggle="tooltip"]').tooltip();
             
-            $.ajax({
-                type: "GET",
-                url: 'assets/themes/aero/assets/bundles/libscripts.bundle.js',
-                success: {},
-                dataType: "script",
-                cache: true
-            }); 
-            
             if($('section.content').length > 0 && (BaseHelper.isAndroid || BaseHelper.isIos))
             {
               var h = $('.body_scroll .card').height();
@@ -56,13 +49,10 @@ export class AeroThemeHelper
 
         if($('section.content').length > 0 && (BaseHelper.isAndroid || BaseHelper.isIos))
         {
-          //var h = $('.body_scroll .card').height();
-          var h = $('.body_scroll').height() && $('.body_scroll .card').height()
+          var h = $('.body_scroll').height() || $('.body_scroll .card').height()
           if(typeof h == "undefined") h = window.innerHeight - 70;
           else h += 100;
 
-          //$('div#target-container-fluid').css('height', (h*0.85)+"px");
-          //$('section.content:eq(0)').css('height', (h*0.95)+"px");
           $('div#target-container-fluid').css('height', (h)+"px");
           $('section.content:eq(0)').css('height', (h)+"px");
           $('section.content:eq(0)').css('overflow', 'hidden');
@@ -107,7 +97,7 @@ export class AeroThemeHelper
           });
         });
 
-        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js');
+        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js'.tr());
         
         BaseHelper.getScript('assets/ext_modules/jsonTreeViewer/libs/jsonTree/jsonTree.js');
         BaseHelper.getScript('assets/ext_modules/slimscrool/jquery.slimscroll.min.js');
@@ -366,7 +356,7 @@ export class AeroThemeHelper
     {
       var homePage =
       {
-        title: 'Panel Anasayfa',
+        title: 'Panel Anasayfa'.tr(),
         icon: 'zmdi-home',
         link: '/'+BaseHelper.angaryosUrlPath+'/home',
       };
@@ -377,7 +367,7 @@ export class AeroThemeHelper
     {
       var page =
       {
-        title: 'Göstergeler',
+        title: 'Göstergeler'.tr(),
         icon: 'zmdi-copy',
         link: '/'+BaseHelper.angaryosUrlPath+'/dashboard',
       };
@@ -388,7 +378,7 @@ export class AeroThemeHelper
     {
       var mapPage =
       {
-        title: 'Harita',
+        title: 'Harita'.tr(),
         icon: 'zmdi-map',
         link: '/'+BaseHelper.angaryosUrlPath+'/map',
       };
@@ -399,7 +389,7 @@ export class AeroThemeHelper
     {
       var mapPage =
       {
-        title: 'İçe Aktar',
+        title: 'İçe Aktar'.tr(),
         icon: 'zmdi-sign-in',
         link: '',
         func: 'importRecord',
@@ -411,7 +401,7 @@ export class AeroThemeHelper
     {
       var mapPage =
       {
-        title: 'Sunucu Logları',
+        title: 'Sunucu Logları'.tr(),
         icon: 'zmdi-code-setting',
         link: '',
         func: 'openBackendLogs',

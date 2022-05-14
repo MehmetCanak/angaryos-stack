@@ -341,6 +341,7 @@ unset($subscribers['temp']['temp'][0]);
 $subscribers['column']['image'][0] = $subscribers['column']['profile_picture'][0];
 $subscribers['column']['report_file'][0] = $subscribers['column']['profile_picture'][0];
 $subscribers['column']['sign_file'][0] = $subscribers['column']['profile_picture'][0];
+$subscribers['column']['pictures'][0] = $subscribers['column']['profile_picture'][0];
 
 $subscribers['table']['sub_linestring_types'][0] = $subscribers['table']['sub_point_types'][0];
 $subscribers['table']['sub_polygon_types'][0] = $subscribers['table']['sub_point_types'][0];

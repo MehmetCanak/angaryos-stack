@@ -14,6 +14,7 @@ $files =
     'DataFilterTypes',
     'DataFilters',
     'Settings',
+    'Languages',
     'Missions',
     'Departments',
     'TableGroups',    

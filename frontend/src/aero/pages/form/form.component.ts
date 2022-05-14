@@ -232,7 +232,7 @@ export class FormComponent
         }else{
             currentTableName = tableDisplayName;
         }    
-        data['title'] = DataHelper.getTitleOrDefault(data['column_set']['name'], this.recordId == 0 ? currentTableName+' Ekle' : 'Düzenle');
+        data['title'] = DataHelper.getTitleOrDefault(data['column_set']['name'], (this.recordId == 0 ? 'Kayıt Ekle ({0})' : 'Kayıt Düzenle ({0})').tr(currentTableName));
         
         var recordJson = ''; 
         if(typeof data['record'] != "undefined") recordJson = BaseHelper.objectToJsonStr(data['record']);
@@ -476,7 +476,7 @@ export class FormComponent
     {
         if(typeof this.guiTriggerHelper[colName] == "undefined")
         {
-            this.messageHelper.toastMessage("Tetikleme fonksiyonu yok: " + fncName, "error", 6000);
+            this.messageHelper.toastMessage("Tetikleme fonksiyonu yok: ".tr() + fncName, "error", 6000);
             return false;
         }
         

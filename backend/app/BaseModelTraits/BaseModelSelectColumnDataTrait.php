@@ -12,8 +12,25 @@ trait BaseModelSelectColumnDataTrait
     
     public function getSelectColumnData($params)
     {
+        global $pipe;
+        
         $control = $this->getUpColumnControl($params);
         if($control) return $control;
+        
+        $customLangSearchLimit = 0;
+        $customLangSearchWord = '';
+        $customLangSearchPage = 1;
+        if(!user_language_control())
+        {
+            $customLangSearchWord = $params->search;
+            $params->search = ''; 
+
+            $customLangSearchLimit = isset($params->limit) ? $params->limit : 10;
+            $params->limit = 10000;
+
+            $customLangSearchPage = $params->page;
+            $params->page = 1;
+        }  
         
         $temp = helper('get_null_object');
         $temp->page = $params->page;
@@ -25,11 +42,60 @@ trait BaseModelSelectColumnDataTrait
         $temp->column = $this;
         $temp->record_per_page = isset($params->limit) ? $params->limit : 10;
         
-        return ColumnClassificationLibrary::relation(  $this, 
+        $data = ColumnClassificationLibrary::relation(  $this, 
                                                         __FUNCTION__,
                                                         $this, 
                                                         NULL, 
                                                         $temp);
+        
+        $data = $this->TranslateSelectColumnData($pipe['table'], $this, $data);        
+        if($customLangSearchLimit == 0) return $data;
+
+        return $this->customLangSearchForGetSelectColumnData($data, $customLangSearchWord, $customLangSearchLimit, $customLangSearchPage);
+    }
+    
+    private function customLangSearchForGetSelectColumnData($data, $search, $limit, $page)
+    {
+        if(strlen($search) > 0)
+        {
+            $search = strtolower($search);
+            
+            $temp = [];
+            foreach($data['results'] as $rec)
+            {
+                $source = TRUE;
+                $display = TRUE;
+
+                if(strstr($search, 'source:'))
+                {
+                    $search = explode('source:', $search)[1];
+                    $display = FALSE;
+                }
+                else if(strstr($search, 'display:'))
+                {
+                    $search = explode('display:', $search)[1];
+                    $source = FALSE;
+                }
+                
+                if($source && strstr(strtolower($rec['id']), $search)) array_push($temp, $rec);
+                else if($display && strstr(strtolower($rec['text']), $search)) array_push($temp, $rec);                
+            }
+        }
+        else $temp = $data['results'];
+        
+        $start = ($page - 1) * $limit;
+        $end = $start + $limit;
+
+        $data = ['results' => []];
+        for($i = $start; $i < $end; $i++)
+            if(isset($temp[$i]))
+                array_push($data['results'], $temp[$i]);
+
+        $more = FALSE;
+        if(count($temp) >= $end) $more = TRUE;
+        $data['pagination'] = ['more' => $more];
+
+        return $data;
     }
 
     private function getFirstJoinTableAliasForSelectColumn($relationTable)
@@ -76,8 +142,21 @@ trait BaseModelSelectColumnDataTrait
         
         $model->where(function ($query) use($source, $display, $params)
         {
-            $query->whereRaw($source.'::text ilike \'%'.$params->search.'%\'');
-            $query->orWhereRaw($display.'::text ilike \'%'.$params->search.'%\'');
+            if(strstr($params->search, 'source:'))
+            {
+                $searchStr = explode('source:', $params->search)[1];
+                $query->whereRaw($source.'::text ilike \'%'.$searchStr.'%\'');
+            }
+            else if(strstr($params->search, 'display:'))
+            {
+                $searchStr = explode('display:', $params->search)[1];
+                $query->orWhereRaw($display.'::text ilike \'%'.$searchStr.'%\'');
+            }
+            else
+            {
+                $query->whereRaw($source.'::text ilike \'%'.$params->search.'%\'');
+                $query->orWhereRaw($display.'::text ilike \'%'.$params->search.'%\'');
+            }
         });        
 
         
@@ -114,9 +193,52 @@ trait BaseModelSelectColumnDataTrait
     public function getSelectColumnDataForRelationSql ($params)
     {
         $sql = ' from ('.$params->relation->relation_sql.') as main_table where ';
-        $sql .= ' ('. $params->relation->relation_display_column.'::text ilike \'%'.$params->search.'%\' ';
-        $sql .= ' or '.$params->relation->relation_source_column.'::text ilike \'%'.$params->search.'%\' )';
         
+        
+        
+        //Select Data Filters
+        global $pipe;
+        $user = \Auth::user();
+        $auths = $user->auths;        
+        $filters = @$auths['filters'][$pipe['table']]['selectColumnData'];
+        if(!$filters) $filters = [];
+        foreach($filters as $filter)
+        {
+            $filter = get_Attr_from_cache('data_filters', 'id', $filter, '*');
+            $sqlOrJson = helper('reverse_clear_string_for_db', $filter->sql_code); 
+
+            $temp = @json_decode($sqlOrJson, TRUE);
+
+            if($temp)
+            {
+                if(isset($temp[$pipe['table'].'.'.$params->column->name])) $tempSql = $temp[$pipe['table'].'.'.$params->column->name];
+                else if(isset($temp['*.'.$params->column->name])) $tempSql = $temp['*.'.$params->column->name];
+                else $tempSql = '';
+            } 
+            else $tempSql = $sqlOrJson;
+
+            $tempSql = trim(str_replace(' "', 'main_table."', ' '.$tempSql));
+            if(strlen($tempSql) > 0) $sql .= ' ('.$tempSql.') and';
+        }        
+        
+        
+        
+        if(strstr($params->search, 'source:'))
+        {
+            $searchStr = explode('source:', $params->search)[1];
+            $sql .= $params->relation->relation_source_column.'::text ilike \'%'.$searchStr.'%\' ';
+        }
+        else if(strstr($params->search, 'display:'))
+        {
+            $searchStr = explode('display:', $params->search)[1];
+            $sql .= $params->relation->relation_display_column.'::text ilike \'%'.$searchStr.'%\' ';
+        }
+        else
+        {
+            $sql .= ' ('. $params->relation->relation_display_column.'::text ilike \'%'.$params->search.'%\' ';
+            $sql .= ' or '.$params->relation->relation_source_column.'::text ilike \'%'.$params->search.'%\' )';
+        }
+            
         global $pipe;
         if(($pipe['table'] == 'tables' || $pipe['table'] == 'columns') && $pipe['SHOW_DELETED_TABLES_AND_COLUMNS'] != '1')
             $sql .= ' and name::text not like \'deleted\_%\' )';
@@ -131,9 +253,9 @@ trait BaseModelSelectColumnDataTrait
         
         $params->count = DB::select('select count(*) '.$sql)[0]->count;
         
-        $sql .= 'order by ' . $params->relation->relation_source_column . ' limit '.$params->record_per_page.' offset '.(($params->page - 1) * $params->record_per_page );
+        $sql .= ' order by ' . $params->relation->relation_source_column . ' limit '.$params->record_per_page.' offset '.(($params->page - 1) * $params->record_per_page );
         $params->records = DB::select('select * '.$sql);
-        
+                
         $params->relation_source_column_name = $params->relation->relation_source_column;
         $params->relation_display_column_name = $params->relation->relation_display_column;
         
@@ -159,8 +281,21 @@ trait BaseModelSelectColumnDataTrait
         
         $model->where(function ($query) use($params, $displayColumn, $sourceColumn)
         {
-            $query->where($displayColumn->name, 'ilike', '%'.$params->search.'%')
-                ->orWhere($sourceColumn->name, 'ilike', '%'.$params->search.'%');
+            if(strstr($params->search, 'source:'))
+            {
+                $searchStr = explode('source:', $params->search)[1];
+                $query->where($sourceColumn->name, 'ilike', '%'.$searchStr.'%');
+            }
+            else if(strstr($params->search, 'display:'))
+            {
+                $searchStr = explode('display:', $params->search)[1];
+                $query->where($displayColumn->name, 'ilike', '%'.$searchStr.'%');
+            }
+            else
+            {
+                $query->where($displayColumn->name, 'ilike', '%'.$params->search.'%')
+                    ->orWhere($sourceColumn->name, 'ilike', '%'.$params->search.'%');
+            }
         });        
         
         $temp->addFilters($model, $table->name, 'selectColumnData');
@@ -203,7 +338,21 @@ trait BaseModelSelectColumnDataTrait
         
         $model->where(function ($query) use($params, $displayColumn, $sourceColumn)
         {
-            $where = '(('.$displayColumn.')::text ilike  \'%'.$params->search.'%\') or ('.$sourceColumn.'::text ilike  \'%'.$params->search.'%\')';
+            if(strstr($params->search, 'source:'))
+            {
+                $searchStr = explode('source:', $params->search)[1];
+                $where = '(('.$sourceColumn.')::text ilike  \'%'.$searchStr.'%\')';
+            }
+            else if(strstr($params->search, 'display:'))
+            {
+                $searchStr = explode('display:', $params->search)[1];
+                $where = '(('.$displayColumn.')::text ilike  \'%'.$searchStr.'%\')';
+            }
+            else
+            {
+                $where = '(('.$displayColumn.')::text ilike  \'%'.$params->search.'%\') or (('.$sourceColumn.')::text ilike  \'%'.$params->search.'%\')';
+            }
+            
             $query->whereRaw($where);
         });
         
@@ -237,7 +386,35 @@ trait BaseModelSelectColumnDataTrait
         $repository = NULL;
         eval(helper('clear_php_code', $dataSource->php_code));
         
-        $data = $repository->searchRecords($params->search, $params->page, $params->record_per_page);
+        
+        //Select Data Filters
+        $filters = [];
+        
+        global $pipe;
+        $user = \Auth::user();
+        $auths = $user->auths;        
+        $tempFilters = @$auths['filters'][$pipe['table']]['selectColumnData'];
+        if(!$tempFilters) $tempFilters = [];
+        foreach($tempFilters as $filter)
+        {
+            $filter = get_Attr_from_cache('data_filters', 'id', $filter, '*');
+            $sqlOrJson = helper('reverse_clear_string_for_db', $filter->sql_code); 
+
+            $tempData = @json_decode($sqlOrJson, TRUE);
+
+            if($tempData)
+            {
+                if(isset($tempData[$pipe['table'].'.'.$params->column->name])) $tempFilter = $tempData[$pipe['table'].'.'.$params->column->name];
+                else if(isset($tempData['*.'.$params->column->name])) $tempFilter = $tempData['*.'.$params->column->name];
+                else $tempFilter = '';
+            } 
+            else $tempFilter = $sqlOrJson;
+            
+            if(strlen(trim($tempFilter)) > 0) array_push($filters, $tempFilter);
+        }    
+        
+        
+        $data = $repository->searchRecords($params->search, $params->page, $params->record_per_page, $filters);
         
         $return['results'] = [];
         foreach($data['records'] as $source => $display)

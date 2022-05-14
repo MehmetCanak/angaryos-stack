@@ -62,7 +62,9 @@ trait BaseModelGetDataFilterTrait
     {
         global $pipe;
         $realTableName = $pipe['table'];
-        $columnName = \Request::segment(7);
+        
+        if(isset($pipe['columnNameForSelectColummnDataRequestEnjection'])) $columnName = $pipe['columnNameForSelectColummnDataRequestEnjection'];
+        else $columnName = \Request::segment(7);
         
         foreach($filters as $filterId)
         {
@@ -73,6 +75,8 @@ trait BaseModelGetDataFilterTrait
             
             if($temp)
             {
+                if(@$pipe['omersavas']) dd(2234, $realTableName.'.'.$columnName, Request::segment(), $temp);
+                
                 if(isset($temp[$realTableName.'.'.$columnName])) $sql = $temp[$realTableName.'.'.$columnName];
                 else if(isset($temp['*.'.$columnName])) $sql = $temp['*.'.$columnName];
                 else continue;

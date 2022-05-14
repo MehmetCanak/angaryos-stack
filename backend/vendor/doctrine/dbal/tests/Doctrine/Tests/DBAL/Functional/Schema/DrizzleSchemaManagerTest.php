@@ -2,12 +2,19 @@
 
 namespace Doctrine\Tests\DBAL\Functional\Schema;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\DrizzlePlatform;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\BinaryType;
 
 class DrizzleSchemaManagerTest extends SchemaManagerFunctionalTestCase
 {
-    public function testListTableWithBinary() : void
+    protected function supportsPlatform(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof DrizzlePlatform;
+    }
+
+    public function testListTableWithBinary(): void
     {
         $tableName = 'test_binary_table';
 
@@ -28,9 +35,9 @@ class DrizzleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertFalse($table->getColumn('column_binary')->getFixed());
     }
 
-    public function testColumnCollation() : void
+    public function testColumnCollation(): void
     {
-        $table                                  = new Table('test_collation');
+        $table = new Table('test_collation');
         $table->addOption('collate', $collation = 'utf8_unicode_ci');
         $table->addColumn('id', 'integer');
         $table->addColumn('text', 'text');

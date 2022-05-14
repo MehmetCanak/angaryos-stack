@@ -8,19 +8,18 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\Tests\DbalFunctionalTestCase;
 use Throwable;
-use const CASE_LOWER;
+
 use function array_change_key_case;
 use function sprintf;
-use function strlen;
-use function strtolower;
-use function substr;
+
+use const CASE_LOWER;
 
 /**
- * @group DBAL-20
+ * @psalm-import-type Params from DriverManager
  */
 class MasterSlaveConnectionTest extends DbalFunctionalTestCase
 {
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -41,19 +40,24 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         } catch (Throwable $e) {
         }
 
-        $this->connection->executeUpdate('DELETE FROM master_slave_table');
+        $this->connection->executeStatement('DELETE FROM master_slave_table');
         $this->connection->insert('master_slave_table', ['test_int' => 1]);
     }
 
-    private function createMasterSlaveConnection(bool $keepSlave = false) : MasterSlaveConnection
+    private function createMasterSlaveConnection(bool $keepSlave = false): MasterSlaveConnection
     {
-        return DriverManager::getConnection($this->createMasterSlaveConnectionParams($keepSlave));
+        $connection = DriverManager::getConnection($this->createMasterSlaveConnectionParams($keepSlave));
+
+        self::assertInstanceOf(MasterSlaveConnection::class, $connection);
+
+        return $connection;
     }
 
     /**
      * @return mixed[]
+     * @psalm-return Params
      */
-    private function createMasterSlaveConnectionParams(bool $keepSlave = false) : array
+    private function createMasterSlaveConnectionParams(bool $keepSlave = false): array
     {
         $params                 = $this->connection->getParams();
         $params['master']       = $params;
@@ -64,16 +68,18 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         return $params;
     }
 
-    public function testInheritCharsetFromMaster() : void
+    public function testInheritCharsetFromMaster(): void
     {
         $charsets = [
-            'utf8',
+            'utf8mb4',
             'latin1',
         ];
 
         foreach ($charsets as $charset) {
             $params                      = $this->createMasterSlaveConnectionParams();
             $params['master']['charset'] = $charset;
+
+            self::assertArrayHasKey('slaves', $params);
 
             foreach ($params['slaves'] as $index => $slaveParams) {
                 if (! isset($slaveParams['charset'])) {
@@ -83,22 +89,19 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
                 unset($params['slaves'][$index]['charset']);
             }
 
-            /** @var MasterSlaveConnection $conn */
             $conn = DriverManager::getConnection($params);
+            self::assertInstanceOf(MasterSlaveConnection::class, $conn);
             $conn->connect('slave');
 
             self::assertFalse($conn->isConnectedToMaster());
 
-            $clientCharset = $conn->fetchColumn('select @@character_set_client as c');
+            $clientCharset = $conn->fetchColumn('select @@character_set_client');
 
-            self::assertSame(
-                $charset,
-                substr(strtolower($clientCharset), 0, strlen($charset))
-            );
+            self::assertSame($charset, $clientCharset);
         }
     }
 
-    public function testMasterOnConnect() : void
+    public function testMasterOnConnect(): void
     {
         $conn = $this->createMasterSlaveConnection();
 
@@ -109,7 +112,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertTrue($conn->isConnectedToMaster());
     }
 
-    public function testNoMasterOnExecuteQuery() : void
+    public function testNoMasterOnExecuteQuery(): void
     {
         $conn = $this->createMasterSlaveConnection();
 
@@ -121,7 +124,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertFalse($conn->isConnectedToMaster());
     }
 
-    public function testMasterOnWriteOperation() : void
+    public function testMasterOnWriteOperation(): void
     {
         $conn = $this->createMasterSlaveConnection();
         $conn->insert('master_slave_table', ['test_int' => 30]);
@@ -136,10 +139,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertTrue($conn->isConnectedToMaster());
     }
 
-    /**
-     * @group DBAL-335
-     */
-    public function testKeepSlaveBeginTransactionStaysOnMaster() : void
+    public function testKeepSlaveBeginTransactionStaysOnMaster(): void
     {
         $conn = $this->createMasterSlaveConnection($keepSlave = true);
         $conn->connect('slave');
@@ -157,10 +157,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertFalse($conn->isConnectedToMaster());
     }
 
-    /**
-     * @group DBAL-335
-     */
-    public function testKeepSlaveInsertStaysOnMaster() : void
+    public function testKeepSlaveInsertStaysOnMaster(): void
     {
         $conn = $this->createMasterSlaveConnection($keepSlave = true);
         $conn->connect('slave');
@@ -176,7 +173,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertFalse($conn->isConnectedToMaster());
     }
 
-    public function testMasterSlaveConnectionCloseAndReconnect() : void
+    public function testMasterSlaveConnectionCloseAndReconnect(): void
     {
         $conn = $this->createMasterSlaveConnection();
         $conn->connect('master');
@@ -189,7 +186,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertTrue($conn->isConnectedToMaster());
     }
 
-    public function testQueryOnMaster() : void
+    public function testQueryOnMaster(): void
     {
         $conn = $this->createMasterSlaveConnection();
 
@@ -213,7 +210,7 @@ class MasterSlaveConnectionTest extends DbalFunctionalTestCase
         self::assertEquals(1, $data[0]['num']);
     }
 
-    public function testQueryOnSlave() : void
+    public function testQueryOnSlave(): void
     {
         $conn = $this->createMasterSlaveConnection();
         $conn->connect('slave');

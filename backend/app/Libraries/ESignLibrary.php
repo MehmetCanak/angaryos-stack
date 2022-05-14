@@ -46,7 +46,7 @@ class ESignLibrary
         
         $override = DB::table('e_signs')
                         ->where('table_id', $params['table']->id)
-                        ->where('source_record_id', $params['record']->id);                        
+                        ->where('source_record_id', $params['record']->id);  
         
         if($params['column'])
         {
@@ -54,9 +54,17 @@ class ESignLibrary
             $override = $override->where('column_id', $params['column']->id);
         }
         
-        if($overrideMethod == 'ifNotSigned') $override = $override->whereRaw('(signed_at::text = \'\') IS NOT FALSE');
+        if($overrideMethod == 'ifNotSigned') $override = $override->whereRaw('(signed_at::text = \'\') IS NOT FALSE'); 
         
-        if($overrideMethod != 'none')  $override->delete();        
+        if($overrideMethod != 'none') 
+        {
+            $old = $override->first();
+            if($old)
+            {
+                copy_record_to_archive($old, 'e_signs');
+                DB::table('e_signs')->where('id', $old->id)->delete();
+            }  
+        }
                 
         $data['signed_text'] = $signedText;
         DB::table('e_signs')->insert($data);

@@ -39,7 +39,7 @@ export class DataEntegratorComponent
     {
         this.aeroThemeHelper.addEventForFeature("standartElementEvents"); 
         this.aeroThemeHelper.addEventForFeature("layoutCommonEvents"); 
-        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js');
+        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js'.tr());
 
         var th = this;
         setTimeout(() => {
@@ -117,7 +117,7 @@ export class DataEntegratorComponent
             this.columns.push({
                 id: 6,
                 source: 'id',
-                display: 'Kayıt No',
+                display: 'Kayıt No'.tr(),
                 gui_type_name: 'numeric'
             });
 
@@ -282,7 +282,7 @@ export class DataEntegratorComponent
             if(typeof data['message'] == "undefined")
                 this.messageHelper.sweetAlert("Beklenmedik cevap geldi!", "Hata", "warning");
             else if(data['message'] == 'error')
-                this.messageHelper.sweetAlert("Bir hata oluştu:" + BaseHelper.objectToJsonStr(data['errors']), "Hata", "warning");
+                this.messageHelper.sweetAlert("Bir hata oluştu: {0}".tr(BaseHelper.objectToJsonStr(data['errors'])), "Hata", "warning");
             else if(data['message'] == 'success')
                 id = data['in_form_data']['source'];
             else
@@ -318,7 +318,7 @@ export class DataEntegratorComponent
             var php_code = $('#'+this.columns[i]['source']+'_changer').val();
             if(typeof php_code == "undefined") php_code = "";
             else if(php_code == "null") php_code = "";
-            else php_code = BaseHelper.replaceAll(php_code, '+', '%2B');
+            else php_code = php_code.replaceAll('+', '%2B');
 
             var col = 
             {
@@ -373,7 +373,7 @@ export class DataEntegratorComponent
             if(typeof data['message'] == "undefined")
                 this.messageHelper.sweetAlert("Beklenmedik cevap geldi!", "Hata", "warning");
             else if(data['message'] == 'error')
-                this.messageHelper.sweetAlert("Bir hata oluştu:" + BaseHelper.objectToJsonStr(data['errors']), "Hata", "warning");
+                this.messageHelper.sweetAlert("Bir hata oluştu: {0}".tr(BaseHelper.objectToJsonStr(data['errors'])), "Hata", "warning");
             else if(data['message'] == 'success')
                 this.messageHelper.sweetAlert("Veri aktarma görevi başarı ile oluşturuldu!", "Başarı", "success");
             else

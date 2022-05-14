@@ -220,6 +220,7 @@ class TableGeoServerOperationsLibrary
         
         $name = 'v_'.$params['table']->name;
         $temp = $helper->createLayer($name, $name, $helper->workspaceName, $helper->dataStoreName);
+        
         if($temp != '') 
         {
             \Log::error('Geoserver layer oluşturulamadı! (Hata: ' . $temp . ')');

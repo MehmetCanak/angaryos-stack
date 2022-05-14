@@ -2,12 +2,39 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Gate;
 use DB;
 use Cache;
 use Storage;
 
 trait MapTrait
 {
+    private function fillAuthFunctions()
+    {
+        $rules = 
+        [
+            'viewAny', 
+            'view',           
+            'create',         
+            'update',
+            'delete',
+            'archive',
+            'restore',
+            'restored',
+            'deleted',
+            'export',
+            'cloneRecord',
+            'columnSetOrArrayIsPermitted',
+            
+            'columnIsPermittedForQuery',
+            'columnIsPermittedForList',
+            'treeIsPermittedForRelationTableData',
+        ];
+        
+        foreach($rules as $rule)
+            Gate::define($rule, 'App\Policies\UserPolicy@'.$rule);
+    }
+    
     private function GetTableNameAndCacheNameFromRequestWMS($requests)
     {
         if(isset($requests['LAYERS'])) $key = 'LAYERS';
@@ -48,7 +75,8 @@ trait MapTrait
         
         if(!isset($user->auths['filters'][$names['tableName']]['list'])) 
         {
-            Cache::remember('userToken:'.$token.'.tableName:'.$names['cacheName'].'.mapFilters', 60 * 60, function()
+            $key = 'userToken:'.$token.'.tableName:'.$names['cacheName'].'.mapFilters';
+            Cache::remember($key, 60 * 60, function()
             {
                 return 'OK';
             });
@@ -225,9 +253,7 @@ trait MapTrait
                 
         foreach($requests as $key => $value) 
         {
-            if($key != 'CQL_FILTER')
-                $value = urlencode($value);
-            
+            $value = urlencode($value);
             $url .= $key.'='.$value.'&';
         }
         
@@ -267,7 +293,7 @@ trait MapTrait
 
         $file->move($tempFolder, $fileName);
 
-        chmod($path, 0777);
+        @chmod($path, 0777);
 
         return $path;
     }
@@ -277,7 +303,7 @@ trait MapTrait
         $temp = explode('/', $path);
         $fileName = $temp[count($temp) - 1];
         $temp[count($temp) - 1] = str_replace('.kmz', '', $fileName);
-        $exportPath = implode('/', $temp);
+        $exportPath = implode('/', $temp).'_'.rand(100,10000);
 
         $zip = new \ZipArchive;
         if ($zip->open($path) === TRUE) 
@@ -288,7 +314,14 @@ trait MapTrait
         else
             custom_abort('can.not.open.kmz.file');
 
-        return $exportPath . '/doc.kml';
+        $r = scandir($exportPath);
+        if(count($r) != 3) 
+        {
+            \Log::alert("kmz içinden geçersiz sayıda dosya çıktı!".json_encode($r));
+            custom_abort('kmz.file.error');
+        }
+        
+        return $exportPath.'/'.$r[2];
     }
 
     private function GetDataArrayFromKmlOrKmzFile($path)
@@ -485,5 +518,25 @@ trait MapTrait
         }
      
         return $return;   
+    }
+    
+    private function getValidatedParamsForSearchGeoInMultiTables()
+    {
+        $params = read_from_response_data('params', TRUE);
+       
+        param_is_have($params, 'wkt');
+        param_is_have($params, 'tables');
+        
+        foreach($params->tables as $i => $tableData)
+        {
+            param_is_have($tableData, 'name');
+            param_is_have($tableData, 'column_array_id');
+            param_is_have($tableData, 'column_array_id_query');
+            
+            param_value_is_correct($tableData, 'column_array_id', ['required', 'numeric']);
+            param_value_is_correct($tableData, 'column_array_id_query', ['required', 'numeric']);
+        }
+        
+        return $params;
     }
 }

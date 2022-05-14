@@ -52,6 +52,9 @@ export class DataTableElementComponent implements OnDestroy
     marked = [];
     
     isNative = null;
+    
+    currentGroupByColumnDataSet = null;
+    started = false;
 
     constructor(
         public route: ActivatedRoute,
@@ -109,9 +112,42 @@ export class DataTableElementComponent implements OnDestroy
     {
         this.fillDefaultVariables();
         this.fillParamsFromLocal();
+                
+        if(Object.keys(this.params["filters"]).length > 0)
+        {
+            this.started = true;
+            this.dataReload();
+        } 
+        else this.groupBySelectionNext();
         
-        this.dataReload(); 
-        this.liveDataModeOperations();         
+        this.liveDataModeOperations();
+    }
+    
+    groupByModalOptions(columnName)
+    {
+        var th = this;
+        
+        setTimeout(() =>
+        {
+            $('#groupByModeModal').on('hidden.bs.modal', function (e) 
+            {
+                th.started = true;
+                th.dataReloadInterval(300);
+            });
+            
+            BaseHelper.getScript('assets/ext_modules/select2/select2.min.js'.tr(), async () => 
+            {
+                $('#groupByDataSelect'+columnName).select2()
+                .on('select2:select', (event) => 
+                {
+                    var cName = th.currentGroupByColumnDataSet['columnName'];
+                    var gName = th.currentGroupByColumnDataSet['columnGuiTypeName'];
+                
+                    var val = $('#groupByDataSelect'+cName).val();
+                    th.groupByDataSelected(cName, gName, val)
+                }); 
+            });              
+        }, 300); 
     }
     
     liveDataModeOperations()
@@ -126,26 +162,34 @@ export class DataTableElementComponent implements OnDestroy
         BaseHelper.liveDataModeIntervalIds.push(temp);
     }
     
+    getDefaultData()
+    {
+        var data = {};        
+        data['table_info'] = {};
+        data['table_info']['display_name'] = ""; 
+        data['table_info']['up_table'] = ""; 
+        data['allColumns'] = {};        
+        data['query_columns'] = {};        
+        data['columns'] = {};        
+        data['records'] = [];        
+        data['loaded'] = false;
+
+        return data;
+    }
+    
     fillDefaultVariables()
     {
         this.recordOperations = DataHelper.recordOperations;
         this.fullBaseUrl = this.getTablePageBaseUrl();
         
-        this.data = {};        
-        this.data['table_info'] = {};
-        this.data['table_info']['display_name'] = ""; 
-        this.data['table_info']['up_table'] = ""; 
-        this.data['allColumns'] = {};        
-        this.data['query_columns'] = {};        
-        this.data['columns'] = {};        
-        this.data['records'] = [];        
-        this.data['loaded'] = false;
+        this.data = this.getDefaultData();
         
         this.iconVisibility = {};
         this.iconVisibility['download'] = !this.lightTable && !this.archiveTable;
         this.iconVisibility['deleted'] = !this.lightTable && !this.archiveTable && this.can('deleted');
         this.iconVisibility['create'] = !this.lightTable && !this.archiveTable && this.can('create');
         this.iconVisibility['editMode'] = !this.lightTable && !this.archiveTable;
+        this.iconVisibility['groupMode'] = !this.lightTable && !this.archiveTable;        
         this.iconVisibility['liveDataMode'] = !this.lightTable && !this.archiveTable;
         this.iconVisibility['recodOperations'] = !this.lightTable && !this.archiveTable;
         this.iconVisibility['selectAsUpTable'] = this.can('selectAsUpTable') && !this.archiveTable;
@@ -177,7 +221,8 @@ export class DataTableElementComponent implements OnDestroy
             filters: {},
             editMode: false,
             liveDataMode: false,
-            columnNames: []
+            columnNames: [],
+            groupBy: []
         };
     }
     
@@ -225,6 +270,8 @@ export class DataTableElementComponent implements OnDestroy
             this.params.column_array_id = temp[1];
             this.params.column_array_id_query = temp[1];
         }
+        
+        if(typeof this.params["groupBy"] == "undefined") this.params["groupBy"] = [];
     }
     
     getLocalVariable(name)
@@ -249,8 +296,143 @@ export class DataTableElementComponent implements OnDestroy
                 timeout);
     }
     
-    dataReload(liveDataIntervalTrigger = false)
+    groupByDataSelected(columnName, guiType, source)
     {
+        var filter = DataHelper.changeDataForFormByGuiType(guiType, source);
+        if(filter.toString().substr(0, 1) == '"') filter = filter.substr(1, filter.length-2);
+        
+        var filterType = 1;        
+        
+        if(filter == null || filter == "" || filter == "null")
+        {
+            filter = null;
+            filterType = 100;
+        }
+
+        guiType = guiType.split(':')[0];
+        switch(guiType)
+        {
+            case "select":
+            case "multiselect":
+                var loggedInUserId = BaseHelper.loggedInUserInfo['user']['id'];
+                var key = "user:"+loggedInUserId+".tables/"+this.tableName+".data.selectQueryElementDataCache."+columnName+"."+filter;
+                
+                for(var i = 0; i < this.currentGroupByColumnDataSet["records"].length; i++)
+                {
+                    var rec = this.currentGroupByColumnDataSet["records"][i];
+                    if(rec["source"] == source)
+                    {
+                        BaseHelper.writeToLocal(key, rec["display"]);
+                        break;;
+                    }
+                }
+
+                filter = [filter];
+                break;
+        }
+                
+        var key = "groupBySelection:"+this.tableName+":"+columnName;
+        BaseHelper.pipe[key] = filter;
+        
+        this.params.filters[columnName] = 
+        {
+            type: filterType,
+            guiType: guiType,
+            filter: filter,
+            description: ""
+        };
+        
+        this.params.filters[columnName]['description'] = this.getFilterDescription(columnName);
+        this.params['filterColumnNames'].push(columnName);
+        
+        this.saveParamsToLocal();
+        
+        this.groupBySelectionNext();
+    }
+    
+    showGroupByModal(columnName, upData)
+    {
+        var url = this.sessionHelper.getBackendUrlWithToken();
+        if(url.length == 0) return;
+        url += this.baseUrl + "/groupBy/" + columnName+"?upData="+BaseHelper.objectToJsonStr(upData);
+        
+        this.sessionHelper.doHttpRequest("GET", url)
+        .then((data) => 
+        {
+            for(var i = 0; i < data["records"].length; i++)
+            {
+                var record = { };
+                record[columnName] = data["records"][i]["display"];
+                data["records"][i]["display"] = DataHelper.convertDataForGui(record, columnName, data["columnGuiTypeName"]);
+            }
+            
+            this.currentGroupByColumnDataSet = data;  
+            
+            var th = this;          
+            setTimeout(() => 
+            {
+                $('#groupByModeModal').modal("show");
+                th.groupByModalOptions(columnName);
+            }, 200);
+        });
+    }
+    
+    groupBySelectionNext()
+    {
+        var upData = {};
+        
+        if(typeof this.params["groupBy"] != "undefined")
+            for(var i = 0; i < this.params["groupBy"].length; i++)
+            {
+                var columnName = this.params["groupBy"][i];
+
+                var key = "groupBySelection:"+this.tableName+":"+columnName;
+                if(typeof BaseHelper.pipe[key] == "undefined")
+                {
+                    this.showGroupByModal(columnName, upData);                
+                    return;
+                }
+                else upData[columnName] = BaseHelper.pipe[key];
+            }
+        
+        if(($("#groupByModeModal").data('bs.modal') || {})._isShown)
+            $('#groupByModeModal').modal('hide');
+        else
+        {
+            this.started = true;
+            this.dataReload();
+        }
+    }
+    
+    pageNameClicked()
+    {
+        if(!BaseHelper['pipe']['ctrlKey'])
+        {
+            this.dataReload();
+            return;
+        }
+        
+        this.params['filters'] = {};
+        this.params['filterColumnNames'] = [];
+        
+        for(var i = 0; i < this.params["groupBy"].length; i++)
+        {
+            var columnName = this.params["groupBy"][i];
+            var key = "groupBySelection:"+this.tableName+":"+columnName;
+            delete BaseHelper.pipe[key];
+        }
+                
+        this.data = this.getDefaultData();
+        
+        this.saveParamsToLocal();
+        
+        this.groupBySelectionNext();
+    }
+    
+    dataReload(liveDataIntervalTrigger = false)
+    {        
+        if(!this.started) return;
+        
         var url = this.sessionHelper.getBackendUrlWithToken();
         if(url.length == 0) return;
         
@@ -508,8 +690,8 @@ export class DataTableElementComponent implements OnDestroy
 
         switch (this.params.filters[columnName]['type']) 
         {
-            case 100: return displayName + ": <b>Boş Olanlar</b>";
-            case 101: return displayName + ": <b>Boş Olmayanlar</b>";
+            case 100: return displayName + ": <b>"+ "Boş Olanlar".tr()+"</b>";
+            case 101: return displayName + ": <b>" +"Boş Olmayanlar".tr()+"</b>";
             default: return displayName + ": " + DataHelper.getFilterDescriptionByColumnGuiType(
                                                         columnName,
                                                         guiType,
@@ -650,7 +832,7 @@ export class DataTableElementComponent implements OnDestroy
     getReportFormat()
     {
         var types = ['xlsx', 'pdf', 'csv'];
-        var format = prompt("Hangi formatta indirmek istersiniz? (xlsx, csv yada pdf)", "xlsx");
+        var format = prompt("Hangi formatta indirmek istersiniz? (xlsx, csv yada pdf)".tr(), "xlsx");
         if(!types.includes(format)) format = 'xlsx';
         
         return format;
@@ -684,6 +866,8 @@ export class DataTableElementComponent implements OnDestroy
     
     detailFilterChanged(filter)
     {
+        delete filter["event"];
+        
         if(filter.filter != null && filter.filter.length == 0)
         {
             delete this.params.filters[filter.columnName];
@@ -716,7 +900,7 @@ export class DataTableElementComponent implements OnDestroy
         this.params.editMode = !this.params.editMode;
         this.saveParamsToLocal();
 
-        this.messageHelper.toastMessage("Düzenleme modu " + (this.params.editMode ? "aktif" : "pasif"));
+        this.messageHelper.toastMessage("Düzenleme modu "+(this.params.editMode ? "aktif" : "pasif"));
     }
     
     toggleLiveDataMode()
@@ -724,7 +908,7 @@ export class DataTableElementComponent implements OnDestroy
         this.params.liveDataMode = !this.params.liveDataMode;
         this.saveParamsToLocal();
 
-        this.messageHelper.toastMessage("Canlı veri modu " + (this.params.liveDataMode ? "aktif" : "pasif"));
+        this.messageHelper.toastMessage("Canlı veri modu "+(this.params.liveDataMode ? "aktif" : "pasif"));
         this.liveDataModeOperations();
     }
     
@@ -745,6 +929,16 @@ export class DataTableElementComponent implements OnDestroy
         this.params['columnNames'] = [];
         this.saveParamsToLocal();
     }
+    
+    groupByModeSettingModalOpen()
+    {
+        $('#groupByModeSettingModal').modal('show');
+    }
+    
+    columnVisibilityModalOpen()
+    {
+        $('#columnVisibilityModal').modal('show');
+    }
 
     toggleColumnVisibility(columnName)
     {
@@ -758,6 +952,23 @@ export class DataTableElementComponent implements OnDestroy
             for(var i = 0; i < len; i++)
                 if(columnName == this.params['columnNames'][i])
                     this.params['columnNames'].splice(i, 1);
+        }
+        
+        this.saveParamsToLocal();
+    }
+    
+    toggleColumnGroupBy(columnName)
+    {
+        if(!this.params['groupBy'].includes(columnName))
+        {
+            this.params['groupBy'].push(columnName);
+        }
+        else
+        {
+            var len = this.params['groupBy'].length;
+            for(var i = 0; i < len; i++)
+                if(columnName == this.params['groupBy'][i])
+                    this.params['groupBy'].splice(i, 1);
         }
         
         this.saveParamsToLocal();
@@ -798,14 +1009,15 @@ export class DataTableElementComponent implements OnDestroy
         
         if(guiType.indexOf("select") > -1)
         {
-            this.generalHelper.navigate('dashboard');
-            //window.location.href = BaseHelper.baseUrl+"dashboard";
+            var lastUrl = window.location.href;
+            window.location.href = BaseHelper.backendBaseUrl+"#/privacy-politica";
+            //this.generalHelper.navigate('/privacy-politica');
             
             setTimeout(() => 
             {
-                //window.location.href = BaseHelper.baseUrl + "table/"+this.tableName+"/";
-                this.generalHelper.navigate("table/"+this.tableName+"/");
-            }, 100);
+                window.location.href = lastUrl;
+                //this.generalHelper.navigate("table/"+this.tableName+"/");
+            }, 50);
             return;
         }
         
@@ -1026,11 +1238,11 @@ export class DataTableElementComponent implements OnDestroy
     {
         var nameMap = 
         {
-            'sum': 'Toplam',
-            'avg': 'Ortalama',
-            'min': 'En az',
-            'max': 'En çok',
-            'count': 'Adet'
+            'sum': 'Toplam'.tr(),
+            'avg': 'Ortalama'.tr(),
+            'min': 'En az'.tr(),
+            'max': 'En çok'.tr(),
+            'count': 'Adet'.tr()
         };
 
         var info = data['collectiveInfos'][columnName];
@@ -1085,7 +1297,8 @@ export class DataTableElementComponent implements OnDestroy
     
     restore(record)
     {
-        this.messageHelper.swalConfirm("Kayıt geri yüklenecek", record.id + " id 'li kaydı geri yüklemek istediğinize emin misiniz?", "warning")
+        var msg = "{0} id 'li kaydı geri yüklemek istediğinize emin misiniz?".tr(record.id);
+        this.messageHelper.swalConfirm("Kayıt geri yüklenecek", msg, "warning")
         .then((r) =>
         {
             if(r != true) return;
@@ -1228,7 +1441,7 @@ export class DataTableElementComponent implements OnDestroy
                     for(var j = 0; j < data['errors'][keys[i]].length; j++)
                         list += ' - '+data['errors'][keys[i]][j] + '<br>';
 
-                this.messageHelper.sweetAlert("Klon esnasında bazı hatalar oluştu!<br><br>"+(list), "Hata", "warning");
+                this.messageHelper.sweetAlert("Klon esnasında bazı hatalar oluştu!".tr()+"<br><br>"+(list), "Hata", "warning");
             }
             else
                 this.messageHelper.sweetAlert("Beklenmedik cevap geldi!", "Hata", "warning");
@@ -1260,17 +1473,17 @@ export class DataTableElementComponent implements OnDestroy
     delete(record)
     {
         var title = "Kayıt silinecek";
-        var message = record.id + " id 'li kaydı simek istediğinize emin misiniz?";
+        var message = "Kaydı simek istediğinize emin misiniz? ID: {0}".tr(record.id);
 
         if(this.selectedRecordList.length > 1)
         {
-            title = this.selectedRecordList.length+" kayıt silinecek";
+            title = "{0} kayıt silinecek".tr(this.selectedRecordList.length);
             var message = "";
             for(var i = 0; i < this.selectedRecordList.length; i++)
                 message += this.selectedRecordList[i].id + ", ";
             
             message = message.substr(0, message.length -2);
-            message += " id 'li kayıtları simek istediğinize emin misiniz?";
+            message = "Kayıtları simek istediğinize emin misiniz? ID: {0}".tr(message);
         }
 
         this.messageHelper.swalConfirm(title, message, "warning")
@@ -1474,7 +1687,7 @@ export class DataTableElementComponent implements OnDestroy
             if(typeof data['message'] == "undefined")
                 this.messageHelper.sweetAlert("Beklenmedik cevap geldi!", "Hata", "warning");
             else
-                this.messageHelper.sweetAlert("Tetikleme cevabı: "+data['message'], "Bilgi", "info");
+                this.messageHelper.sweetAlert("Tetikleme cevabı".tr()+":"+data['message'], "Bilgi", "info");
         })
         .catch((e) => 
         { 
@@ -1522,7 +1735,7 @@ export class DataTableElementComponent implements OnDestroy
 
         setTimeout(() => 
         {
-            $('.filter-cell multi-select-element').parent().parent().css('padding', '5 0 0 5');
+            $('.filter-cell multi-select-element').parent().parent().css('padding', '5 0 0 5');   
         }, 500);
         
         this.nativeOperations();

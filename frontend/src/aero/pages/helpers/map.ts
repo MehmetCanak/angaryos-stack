@@ -56,6 +56,7 @@ export abstract class MapHelper
     if(this.customProjectionAdded) return;
 
     this.userProjection = 'EPSG:'+BaseHelper.loggedInUserInfo.user.srid;
+    if(this.userProjection == null) this.userProjection = "EPSG:7932";
 
     proj4.defs('EPSG:7932', '+proj=tmerc +lat_0=0 +lon_0=30 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +units=m +no_defs');
     register(proj4);
@@ -369,12 +370,12 @@ export abstract class MapHelper
 
   public static getStyleCodeForEval(code)
   {
-    code = BaseHelper.replaceAll(code, " CircleStyle(", " th.CircleStyle(");
-    code = BaseHelper.replaceAll(code, " Style(", " th.Style(");
-    code = BaseHelper.replaceAll(code, " Icon(", " th.Icon(");
-    code = BaseHelper.replaceAll(code, " Text(", " th.Text(");
-    code = BaseHelper.replaceAll(code, " Fill(", " th.Fill(");
-    code = BaseHelper.replaceAll(code, " Stroke(", " th.Stroke(");
+    code = code.replaceAll(" CircleStyle(", " th.CircleStyle(");
+    code = code.replaceAll(" Style(", " th.Style(");
+    code = code.replaceAll(" Icon(", " th.Icon(");
+    code = code.replaceAll(" Text(", " th.Text(");
+    code = code.replaceAll(" Fill(", " th.Fill(");
+    code = code.replaceAll(" Stroke(", " th.Stroke(");
 
     return code;
   }
@@ -435,7 +436,7 @@ export abstract class MapHelper
 
     this.addEventListenersOnVectorSource(map, vectorSource, tableAuth);
     
-    layer['name'] = tableAuth["workspace"]+'__'+tableAuth["layer_name"];
+    layer['name'] = tableAuth["orj_name"];
 
     var keys = Object.keys(tableAuth);
     for(var i = 0; i < keys.length; i++) layer[keys[i]] = tableAuth[keys[i]];
@@ -472,7 +473,7 @@ export abstract class MapHelper
       })
     });
 
-    layer['name'] = tableAuth["workspace"]+'__'+tableAuth["layer_name"];
+    layer['name'] = tableAuth["orj_name"];
     
     var keys = Object.keys(tableAuth);
     for(var i = 0; i < keys.length; i++) layer[keys[i]] = tableAuth[keys[i]];
@@ -503,7 +504,7 @@ export abstract class MapHelper
       })
     });
 
-    layer['name'] = tableAuth["workspace"]+'__'+tableAuth["layer_name"];
+    layer['name'] = tableAuth["orj_name"];
     
     var keys = Object.keys(tableAuth);
     for(var i = 0; i < keys.length; i++) layer[keys[i]] = tableAuth[keys[i]];
@@ -563,6 +564,7 @@ export abstract class MapHelper
       {
         var tableName = tableNames[i];
         var auth = layerAuths[tableName];
+        auth["orj_name"] = tableName;
 
         var layer = this.getLayerFromMapAuth(map, auth);
         if(layer == null) continue;
@@ -1129,15 +1131,15 @@ export abstract class MapHelper
       if(zoom >= 19) return sizes[19];
       if(zoom <= 8) return sizes[8];
       
-      return sizes[Math.round(zoom)] * 8;
+      return sizes[Math.round(zoom)] * 1.5;
   }
 
   public static showNoMultipleConfirm(map, e = null)
   {
       return Swal.fire(
       {
-          title: 'Emin misiniz?',
-          text: "Bu nesneyi ekleyebilmek için eski nesneler silinecek!",
+          title: 'Emin misiniz?'.tr(),
+          text: "Bu nesneyi ekleyebilmek için eski nesneler silinecek!".tr(),
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: '#3085d6',

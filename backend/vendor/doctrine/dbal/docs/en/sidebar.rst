@@ -20,3 +20,6 @@
     reference/caching
     reference/known-vendor-issues
     reference/upgrading
+    reference/testing
+
+    explanation/implicit-indexes

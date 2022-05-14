@@ -3,10 +3,10 @@
 namespace Doctrine\Tests\DBAL\Driver;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\DriverException as DriverExceptionInterface;
 use Doctrine\DBAL\Driver\ExceptionConverterDriver;
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Exception\ConnectionException;
 use Doctrine\DBAL\Exception\ConstraintViolationException;
 use Doctrine\DBAL\Exception\DatabaseObjectExistsException;
@@ -30,6 +30,7 @@ use Doctrine\DBAL\VersionAwarePlatformDriver;
 use Doctrine\Tests\DbalTestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use ReflectionProperty;
+
 use function array_merge;
 use function get_class;
 use function sprintf;
@@ -61,7 +62,7 @@ abstract class AbstractDriverTest extends DbalTestCase
      */
     protected $driver;
 
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -69,17 +70,17 @@ abstract class AbstractDriverTest extends DbalTestCase
     }
 
     /**
-     * @param int|string $errorCode
+     * @param int|string                    $errorCode
+     * @param class-string<DriverException> $expectedClass
      *
      * @dataProvider exceptionConversionProvider
      */
-    public function testConvertsException($errorCode, ?string $sqlState, ?string $message, string $expectedClass) : void
+    public function testConvertsException($errorCode, ?string $sqlState, string $message, string $expectedClass): void
     {
         if (! $this->driver instanceof ExceptionConverterDriver) {
             $this->markTestSkipped('This test is only intended for exception converter drivers.');
         }
 
-        /** @var DriverExceptionInterface|MockObject $driverException */
         $driverException = $this->getMockBuilder(DriverExceptionInterface::class)
             ->setConstructorArgs([$message])
             ->getMock();
@@ -99,7 +100,7 @@ abstract class AbstractDriverTest extends DbalTestCase
         self::assertSame($dbalMessage, $dbalException->getMessage());
     }
 
-    public function testCreatesDatabasePlatformForVersion() : void
+    public function testCreatesDatabasePlatformForVersion(): void
     {
         if (! $this->driver instanceof VersionAwarePlatformDriver) {
             $this->markTestSkipped('This test is only intended for version aware platform drivers.');
@@ -132,17 +133,17 @@ abstract class AbstractDriverTest extends DbalTestCase
         }
     }
 
-    public function testThrowsExceptionOnCreatingDatabasePlatformsForInvalidVersion() : void
+    public function testThrowsExceptionOnCreatingDatabasePlatformsForInvalidVersion(): void
     {
         if (! $this->driver instanceof VersionAwarePlatformDriver) {
             $this->markTestSkipped('This test is only intended for version aware platform drivers.');
         }
 
-        $this->expectException(DBALException::class);
+        $this->expectException(Exception::class);
         $this->driver->createDatabasePlatformForVersion('foo');
     }
 
-    public function testReturnsDatabaseName() : void
+    public function testReturnsDatabaseName(): void
     {
         $params = [
             'user'     => 'foo',
@@ -154,17 +155,17 @@ abstract class AbstractDriverTest extends DbalTestCase
 
         $connection->expects($this->once())
             ->method('getParams')
-            ->will($this->returnValue($params));
+            ->willReturn($params);
 
         self::assertSame($params['dbname'], $this->driver->getDatabase($connection));
     }
 
-    public function testReturnsDatabasePlatform() : void
+    public function testReturnsDatabasePlatform(): void
     {
         self::assertEquals($this->createPlatform(), $this->driver->getDatabasePlatform());
     }
 
-    public function testReturnsSchemaManager() : void
+    public function testReturnsSchemaManager(): void
     {
         $connection    = $this->getConnectionMock();
         $schemaManager = $this->driver->getSchemaManager($connection);
@@ -180,7 +181,7 @@ abstract class AbstractDriverTest extends DbalTestCase
     /**
      * Factory method for creating the driver instance under test.
      */
-    abstract protected function createDriver() : Driver;
+    abstract protected function createDriver(): Driver;
 
     /**
      * Factory method for creating the the platform instance return by the driver under test.
@@ -188,7 +189,7 @@ abstract class AbstractDriverTest extends DbalTestCase
      * The platform instance returned by this method must be the same as returned by
      * the driver's getDatabasePlatform() method.
      */
-    abstract protected function createPlatform() : AbstractPlatform;
+    abstract protected function createPlatform(): AbstractPlatform;
 
     /**
      * Factory method for creating the the schema manager instance return by the driver under test.
@@ -198,27 +199,28 @@ abstract class AbstractDriverTest extends DbalTestCase
      *
      * @param Connection $connection The underlying connection to use.
      */
-    abstract protected function createSchemaManager(Connection $connection) : AbstractSchemaManager;
+    abstract protected function createSchemaManager(Connection $connection): AbstractSchemaManager;
 
-    protected function getConnectionMock() : Connection
+    /**
+     * @return Connection&MockObject
+     */
+    protected function getConnectionMock(): Connection
     {
-        return $this->getMockBuilder(Connection::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        return $this->createMock(Connection::class);
     }
 
     /**
      * @return array<int, array<int, string>>
      */
-    protected function getDatabasePlatformsForVersions() : array
+    protected function getDatabasePlatformsForVersions(): array
     {
         return [];
     }
 
     /**
-     * @return mixed[][]
+     * @return iterable<mixed[]>
      */
-    public static function exceptionConversionProvider() : iterable
+    public static function exceptionConversionProvider(): iterable
     {
         foreach (static::getExceptionConversionData() as $expectedClass => $items) {
             foreach ($items as $item) {
@@ -232,7 +234,7 @@ abstract class AbstractDriverTest extends DbalTestCase
     /**
      * @return array<string,mixed[][]>
      */
-    protected static function getExceptionConversionData() : array
+    protected static function getExceptionConversionData(): array
     {
         return [];
     }

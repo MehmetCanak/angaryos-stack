@@ -26,7 +26,7 @@ export class TextElementComponent
     {
         if(this.type == "json" || this.type == "jsonb")
         {
-            this.value = BaseHelper.replaceAll(this.value, '\\"', '"');
+            this.value = this.value.replaceAll('\\"', '"');
             
             if(this.value.length > 0 && this.value.substr(0, 1) == '"')
                 this.value = this.value.substr(1, this.value.length-2);

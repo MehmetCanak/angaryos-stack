@@ -26,6 +26,7 @@ export class LoginComponent
 {
     public loading = false;
     public baseUrl = "";
+    public year;
 
     public user = 
     {
@@ -56,6 +57,8 @@ export class LoginComponent
         setTimeout(() => this.cookieControl(), 2000);
         
         if(BaseHelper.isAndroid || BaseHelper.isIos) this.isNative = true;
+        
+        this.year = (new Date()).getFullYear();
     }
     
     ngAfterViewInit()
@@ -70,10 +73,10 @@ export class LoginComponent
         
         Swal.fire(
         {
-          title: 'Şifre Hatırlatıcı',
-          html: `<input type="text" id="mail" class="swal2-input" autocomplete="off" placeholder="E-mail yada TC No">`,
-          confirmButtonText: 'Şifremi Sıfırla',
-          cancelButtonText: 'İptal',
+          title: 'Şifre Hatırlatıcı'.tr(),
+          html: `<input type="text" id="mail" class="swal2-input" autocomplete="off" placeholder="`+'E-mail yada TC No'.tr()+`">`,
+          confirmButtonText: 'Şifremi Sıfırla'.tr(),
+          cancelButtonText: 'İptal'.tr(),
           customClass: 
           {
             confirmButton: 'btn btn-success',
@@ -86,7 +89,7 @@ export class LoginComponent
           preConfirm: () => 
           {
             var mail = Swal.getPopup().querySelector('#mail')['value'];
-            if(mail.length == 0) Swal.showValidationMessage(`Mail boş geçilemez`);
+            if(mail.length == 0) Swal.showValidationMessage("Mail boş geçilemez".tr());
           }
         })
         .then( async (result) => 

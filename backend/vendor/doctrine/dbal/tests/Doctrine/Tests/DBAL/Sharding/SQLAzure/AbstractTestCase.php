@@ -7,6 +7,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Sharding\SQLAzure\SQLAzureShardManager;
 use PHPUnit\Framework\TestCase;
+
 use function strpos;
 
 abstract class AbstractTestCase extends TestCase
@@ -17,16 +18,16 @@ abstract class AbstractTestCase extends TestCase
     /** @var SQLAzureShardManager */
     protected $sm;
 
-    protected function setUp() : void
+    protected function setUp(): void
     {
-        if (! isset($GLOBALS['db_type']) || strpos($GLOBALS['db_type'], 'sqlsrv') === false) {
+        if (! isset($GLOBALS['db_driver']) || strpos($GLOBALS['db_driver'], 'sqlsrv') === false) {
             $this->markTestSkipped('No driver or sqlserver driver specified.');
         }
 
         $params     = [
-            'driver' => $GLOBALS['db_type'],
-            'dbname' => $GLOBALS['db_name'],
-            'user' => $GLOBALS['db_username'],
+            'driver' => $GLOBALS['db_driver'],
+            'dbname' => $GLOBALS['db_dbname'],
+            'user' => $GLOBALS['db_user'],
             'password' => $GLOBALS['db_password'],
             'host' => $GLOBALS['db_host'],
             'sharding' => [
@@ -40,6 +41,7 @@ abstract class AbstractTestCase extends TestCase
         $this->conn = DriverManager::getConnection($params);
 
         $serverEdition = $this->conn->fetchColumn("SELECT CONVERT(NVARCHAR(128), SERVERPROPERTY('Edition'))");
+        self::assertNotFalse($serverEdition);
 
         if (strpos($serverEdition, 'SQL Azure') !== 0) {
             $this->markTestSkipped('SQL Azure only test.');
@@ -52,7 +54,7 @@ abstract class AbstractTestCase extends TestCase
         $this->sm = new SQLAzureShardManager($this->conn);
     }
 
-    protected function createShopSchema() : Schema
+    protected function createShopSchema(): Schema
     {
         $schema = new Schema();
 

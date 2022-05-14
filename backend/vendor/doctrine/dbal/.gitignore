@@ -1,4 +1,5 @@
-/.phpunit.result.cache
+/composer.lock
+.phpunit.result.cache
 build/
 logs/
 reports/
@@ -9,3 +10,4 @@ vendor/
 /phpunit.xml
 /.phpcs-cache
 /phpstan.neon
+/psalm.xml

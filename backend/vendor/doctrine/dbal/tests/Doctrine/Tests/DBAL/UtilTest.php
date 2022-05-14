@@ -2,7 +2,7 @@
 
 namespace Doctrine\Tests\DBAL;
 
-use Doctrine\DBAL\Driver\OCI8\OCI8Statement;
+use Doctrine\DBAL\Driver\OCI8\Statement;
 use Doctrine\Tests\DbalTestCase;
 
 class UtilTest extends DbalTestCase
@@ -10,7 +10,7 @@ class UtilTest extends DbalTestCase
     /**
      * @return mixed[][]
      */
-    public static function dataConvertPositionalToNamedParameters() : iterable
+    public static function dataConvertPositionalToNamedParameters(): iterable
     {
         return [
             [
@@ -71,9 +71,12 @@ class UtilTest extends DbalTestCase
      *
      * @dataProvider dataConvertPositionalToNamedParameters
      */
-    public function testConvertPositionalToNamedParameters(string $inputSQL, string $expectedOutputSQL, array $expectedOutputParamsMap) : void
-    {
-        [$statement, $params] = OCI8Statement::convertPositionalToNamedPlaceholders($inputSQL);
+    public function testConvertPositionalToNamedParameters(
+        string $inputSQL,
+        string $expectedOutputSQL,
+        array $expectedOutputParamsMap
+    ): void {
+        [$statement, $params] = Statement::convertPositionalToNamedPlaceholders($inputSQL);
 
         self::assertEquals($expectedOutputSQL, $statement);
         self::assertEquals($expectedOutputParamsMap, $params);

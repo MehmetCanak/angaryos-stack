@@ -2,5 +2,5 @@
 
 $column_data_sources =
 [
-    'auths' => '$repository = new App\Repositories\AuthsRepository();'
+    'auths' => '<?php $repository = new App\Repositories\AuthsRepository(); ?>'
 ];

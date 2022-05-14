@@ -9,7 +9,7 @@ name="{{ name }}" id="{{ name }}"
 [hidden]="filterType != '4'"
 value="{{ val2 }}" 
 class="{{ class }} datetime"        
-placeholder="İkinci zaman"        
+placeholder="{{ 'İkinci zaman'.tr() }}"        
 name="{{ name }}_2" id="{{ name }}_2"
 >
 
@@ -20,15 +20,15 @@ name="{{ name }}_2" id="{{ name }}_2"
     class="show-tick ms form-control">
     
     <option value="1">
-        Buna eşit
+        {{ 'Buna eşit'.tr() }}
     </option>
     <option value="2">
-        Bundan önce
+        {{ 'Bundan önce'.tr() }}
     </option>
     <option value="3">
-        Bundan sonra
+        {{ 'Bundan sonra'.tr() }}
     </option>
     <option value="4">
-        İki zaman arasında
+        {{ 'İki zaman arasında'.tr() }}
     </option>
 </select>

@@ -10,7 +10,7 @@ $column_data_sources[$column->name]->save();
 
 
 $temp = $this->get_base_record();
-$temp['name_basic'] = $column->name . ' varsayilan';
+$temp['name_basic'] = $column_name_display_name_map[$column->name] . ' kolonu varsayilan tablo ilişkisi';
 $temp['column_data_source_id'] = $column_data_sources[$column->name]->id;
 
 $column_table_relations[$column->name] = new BaseModel('column_table_relations', $temp);

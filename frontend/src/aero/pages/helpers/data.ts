@@ -1,4 +1,32 @@
 import { BaseHelper } from './base';
+import { LanguageHelper } from './language';
+
+BaseHelper.preLoad();
+
+if (!String.prototype['tr']) 
+{
+  String.prototype['tr'] = function() 
+  {
+    var args = arguments;
+    var tr = LanguageHelper.translateWithCache(this);
+    return tr.format(args);
+  };
+}
+
+if (!String.prototype['format']) 
+{
+  String.prototype['format'] = function() 
+  {
+    var args = arguments[0];
+    return this.replace(/{(\d+)}/g, function(match, number) 
+    { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
 
 declare var $: any;
 
@@ -11,37 +39,37 @@ export abstract class DataHelper
         {
             'type': 'show',
             'icon': 'info-alt',
-            'display_name' : 'Detay Göster',
+            'display_name' : 'Detay Göster'.tr(),
             'link': '[id]'
         },
         {
             'type': 'edit',
             'icon': 'pencil-alt2',
-            'display_name' : 'Düzenle',
+            'display_name' : 'Düzenle'.tr(),
             'link': '[id]/edit'
         }, 
         {
             'type': 'delete',
             'icon': 'trash',
-            'display_name' : 'Sil',
+            'display_name' : 'Sil'.tr(),
             'link': ''
         },
         {
             'type': 'archive',
             'icon': 'reload',
-            'display_name' : 'Kaydın Geçmişi',
+            'display_name' : 'Kaydın Geçmişi'.tr(),
             'link': '[id]/archive'
         },
         {
             'type': 'clone',
             'icon': 'files',
-            'display_name' : 'Klonla',
+            'display_name' : 'Klonla'.tr(),
             'link': ''
         },
         {
             'type': 'export',
             'icon': 'export',
-            'display_name' : 'Dışa Aktar',
+            'display_name' : 'Dışa Aktar'.tr(),
             'link': ''
         }
     ]; 
@@ -148,38 +176,40 @@ export abstract class DataHelper
     {
         switch(filterType)
         {
-            case 1: return "içinde '"+data+"' geçen";
-            case 2: return "'"+data+"' ile başlayan";
-            case 3: return "'"+data+"' ile biten";
+            case 1: return "içinde '{0}' geçen".tr(data);
+            case 2: return "'{0}' ile başlayan".tr(data);
+            case 3: return "'{0}' ile biten".tr(data);
             case 4: return "'"+data+"'";
-            case 5: return "'"+data+"' a eşit olmayan";
+            case 5: return "'{0}' a eşit olmayan".tr(data);
             default: return "no string filter type for " + filterType;
         }
     }
     
     public static getFilterDescriptionForTextType(filterType, data)
     {
-        switch(filterType)
+        return this.getFilterDescriptionForStringType(filterType, data);
+        /*switch(filterType)
         {
-            case 1: return "içinde '"+data+"' geçen";
-            case 2: return "'"+data+"' ile başlayan";
-            case 3: return "'"+data+"' ile biten";
+            case 1: return "içinde '{0}' geçen".tr(data);
+            case 2: return "'{0}' ile başlayan".tr(data);
+            case 3: return "'{0}' ile biten".tr(data);
             case 4: return "'"+data+"'";
-            case 5: return "'"+data+"' a eşit olmayan";
+            case 5: return "'{0}' a eşit olmayan".tr(data);
             default: return "no string filter type for " + filterType;
-        }
+        }*/
     }
     
     public static getFilterDescriptionForMoneyType(filterType, data)
     {
-        switch(filterType)
+        return this.getFilterDescriptionForNumericType(filterType, data);
+        /*switch(filterType)
         {
             case 1: return data;
-            case 2: return data + " olmayanlar";
-            case 3: return data + "'den küçük olanlar";
-            case 4: return data + "'den büyük olanlar";
+            case 2: return "{0} olmayanlar".tr(data);
+            case 3: return "{0} 'den küçük olanlar".tr(data);
+            case 4: return "{0} 'den büyük olanlar".tr(data);
             default: return "no numeric filter type for " + filterType;
-        }
+        }*/
     }
 
     public static getFilterDescriptionForNumericType(filterType, data)
@@ -187,9 +217,9 @@ export abstract class DataHelper
         switch(filterType)
         {
             case 1: return data;
-            case 2: return data + " olmayanlar";
-            case 3: return data + "'den küçük olanlar";
-            case 4: return data + "'den büyük olanlar";
+            case 2: return "{0} olmayanlar".tr(data);
+            case 3: return "{0} 'den küçük olanlar".tr(data);
+            case 4: return "{0} 'den büyük olanlar".tr(data);
             default: return "no numeric filter type for " + filterType;
         }
     }
@@ -202,13 +232,13 @@ export abstract class DataHelper
             case 1: 
                 var rt = "";
                 for(var i = 0; i < data.length; i++)
-                    rt += " yada '" + BaseHelper.readFromLocal(key+data[i]) + "'";
-                return rt.substr(6);
+                    rt += " "+"yada".tr()+" '" + BaseHelper.readFromLocal(key+data[i]) + "'";
+                return rt.substr("yada".tr().length + 2);
             case 2: 
                 var rt = "";
                 for(var i = 0; i < data.length; i++)
-                    rt += " ve '" + BaseHelper.readFromLocal(key+data[i]) + "'";
-                return rt.substr(4);
+                    rt += " "+"ve".tr()+" '" + BaseHelper.readFromLocal(key+data[i]) + "'";
+                return rt.substr("yada".tr().length + 2);
             default: return "no select filter type for " + filterType;
         }
     }
@@ -216,29 +246,31 @@ export abstract class DataHelper
     public static getFilterDescriptionForDateTimeType(filterType, data, filter)
     {
         data = BaseHelper.dBDateTimeStringToHumanDateTimeString(data);
+        return this.getFilterDescriptionForTimeType(filterType, data, filter);
         
-        switch(filterType)
+        /*switch(filterType)
         {
             case 1: return data;
-            case 2: return data + " 'dan önce";
-            case 3: return data + " 'dan sonra";
-            case 4: return data + " ve " + filter['filter2'] + " arasında";
+            case 2: return "{0} 'dan önce".tr(data);
+            case 3: return "{0} 'dan sonra".tr(data);
+            case 4: return "{0} ve {1} arasında".tr(data, filter['filter2']);
             default: return "no datetime filter type for " + filterType;
-        }
+        }*/
     }
 
     public static getFilterDescriptionForDateType(filterType, data, filter)
     {
         data = BaseHelper.dBDateStringToHumanDateString(data);
+        return this.getFilterDescriptionForTimeType(filterType, data, filter);
         
-        switch(filterType)
+        /*switch(filterType)
         {
             case 1: return data;
-            case 2: return data + " 'dan önce";
-            case 3: return data + " 'dan sonra";
-            case 4: return data + " ve " + filter['filter2'] + " arasında";
+            case 2: return "{0} 'dan önce".tr(data);
+            case 3: return "{0} 'dan sonra".tr(data);
+            case 4: return "{0} ve {1} arasında".tr(data, filter['filter2']);
             default: return "no datetime filter type for " + filterType;
-        }
+        }*/
     }
 
     public static getFilterDescriptionForTimeType(filterType, data, filter)
@@ -246,9 +278,9 @@ export abstract class DataHelper
         switch(filterType)
         {
             case 1: return data;
-            case 2: return data + " 'dan önce";
-            case 3: return data + " 'dan sonra";
-            case 4: return data + " ve " + filter['filter2'] + " arasında";
+            case 2: return "{0} 'dan önce".tr(data);
+            case 3: return "{0} 'dan sonra".tr(data);
+            case 4: return "{0} ve {1} arasında".tr(data, filter['filter2']);
             default: return "no datetime filter type for " + filterType;
         }
     }
@@ -272,8 +304,8 @@ export abstract class DataHelper
     {
         switch(filterType)
         {
-            case 1: return 'Herhangi bir alanla kesişen';
-            case 2: return 'Tüm alanlarda aynı anda kesişen';
+            case 1: return 'Herhangi bir alanla kesişen'.tr();
+            case 2: return 'Tüm alanlarda aynı anda kesişen'.tr();
             default: return "no boolean filter type for " + filterType;
         }
     }
@@ -289,7 +321,7 @@ export abstract class DataHelper
         if(type == null) return;
 
         var data = record[columnName];
-        if(data == null) return "";
+        if(data == null) return "[Boş]".tr();
         
         switch(type.split(':')[0])
         {
@@ -342,13 +374,16 @@ export abstract class DataHelper
         var id = 0;
         if(record != null) id = record['id'];
         
+        if(data == "0") data = false;
+        if(data == "1") data = true;
+        
         switch(guiType)
         {
             case 'boolean': 
             case 'boolean:fastchange':
-                return data ? 'Aktif' : 'Pasif';
+                return data ? 'Aktif'.tr() : 'Pasif'.tr();
             case 'boolean:gender':
-                return data ? 'Erkek' : 'Kadın';
+                return data ? 'Erkek'.tr() : 'Kadın'.tr();
             default: return data.toString();
         }
     }
@@ -485,9 +520,14 @@ export abstract class DataHelper
         {
             case null:
             case "":
+            case "null":
                 return "";
-            case "true": return "1";
-            case "false": return "0";        
+            case "true": 
+            case true: 
+                return "1";
+            case "false": 
+            case false: 
+                return "0";        
             default:
                 alert("changeDataForFormByGuiTypeBoolean type error");
                 return data;
@@ -521,6 +561,7 @@ export abstract class DataHelper
 
     public static changeDataForFilterByGuiTypeBoolean(data)
     {
+        if(data == null || data == "") return "";
         return data == "true";
     }
 
@@ -572,8 +613,10 @@ export abstract class DataHelper
     {
         var url = al['url'];
         
-        url = BaseHelper.replaceAll(url, '***baseUrl***', BaseHelper.backendBaseUrl);
-        url = BaseHelper.replaceAll(url, '***token***', BaseHelper.token);
+        if(url == null || url.length == 0) return "";
+        
+        url = url.replaceAll('***baseUrl***', BaseHelper.backendBaseUrl);
+        url = url.replaceAll('***token***', BaseHelper.token);
         
         url = url.replaceAll('//', '/');
         url = url.replaceAll(':/', '://');
@@ -585,7 +628,7 @@ export abstract class DataHelper
         for(var i = 0; i < keys.length; i++)
         {
             var key = keys[i];
-            url = BaseHelper.replaceAll(url, '***user.'+key+'***', user[key]);
+            url = url.replaceAll('***user.'+key+'***', user[key]);
         }
         
         return url;
@@ -602,8 +645,8 @@ export abstract class DataHelper
         
         var payload = al['payload'];
 
-        payload = BaseHelper.replaceAll(payload, 'BaseHelper', 'th.BaseHelper');
-        payload = BaseHelper.replaceAll(payload, 'this', 'th');
+        payload = payload.replaceAll('BaseHelper', 'th.BaseHelper');
+        payload = payload.replaceAll('this', 'th');
 
         eval(payload);
     }

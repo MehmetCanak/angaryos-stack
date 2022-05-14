@@ -22,6 +22,7 @@ $column_gui_type_override =
     'column_ids' => $column_gui_types['multiselectdragdrop']->id,
     'subscriber_ids' => $column_gui_types['multiselectdragdrop']->id,
     'profile_picture' => $column_gui_types['files']->id,
+    'pictures' => $column_gui_types['files']->id,
     'sign_file' => $column_gui_types['files']->id,
     'signed_text' => $column_gui_types['richtext']->id,
     'e_sign_pattern_c' => $column_gui_types['codeeditor:php']->id,
@@ -37,6 +38,7 @@ $column_gui_type_override =
     
     //select ve multiselect elemanlardan hanginler static olmalı bunları bi incele
     'department_id' => $column_gui_types['select:static']->id,
+    'language_id' => $column_gui_types['select:static']->id,
     'column_validation_ids' => $column_gui_types['multiselect:static']->id,
     'column_collective_info_id' => $column_gui_types['select:static']->id,
     'subscriber_type_id' => $column_gui_types['select:static']->id,

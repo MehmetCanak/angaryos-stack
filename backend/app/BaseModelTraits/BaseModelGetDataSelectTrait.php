@@ -94,7 +94,7 @@ trait BaseModelGetDataSelectTrait
     {
         $table = get_attr_from_cache('tables', 'id', $params->relation->relation_table_id, '*');
         
-        $params->table_alias  = $params->column->name.'___'.$table->name.$params->relation->id;
+        $params->base_table_alias  = $params->column->name.'___'.$table->name.$params->relation->id;
         
         $joinIds = json_decode($params->relation->join_table_ids);
         $joinId = $joinIds[0];

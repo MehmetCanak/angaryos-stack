@@ -11,9 +11,7 @@ export type inputTypes = 'text' | 'textarea' ;
 @Injectable()
 export class MessageHelper 
 {   
-    constructor( ) 
-    {
-    } 
+    constructor( ) { } 
     
     public toastMessage(message: string, type:string = "info", duration:number = 3000)
     {
@@ -31,7 +29,7 @@ export class MessageHelper
         Toast.fire(
         {
             icon: iconType,
-            title: message
+            title: message.tr()
         });
     }
     
@@ -42,14 +40,15 @@ export class MessageHelper
         
         return Swal.fire(
         {
-            title: title,
+            title: title.tr(),
             input: tempInputType,
             inputAttributes: 
             {
               autocapitalize: 'off'
             },
             showCancelButton: true,
-            confirmButtonText: confirmText,
+            confirmButtonText: confirmText.tr(),
+            cancelButtonText: cancelText.tr()
         });
     }
     
@@ -57,11 +56,12 @@ export class MessageHelper
     {
         return Swal.fire(
         {
-            title: title,
+            title: title.tr(),
             input: "select",
             inputOptions: inputOptions,
             showCancelButton: true,
-            confirmButtonText: confirmText,
+            confirmButtonText: confirmText.tr(),
+            cancelButtonText: cancelText.tr()
         });
     }
     
@@ -69,14 +69,14 @@ export class MessageHelper
     {
         return Swal.fire(
         {
-            title: title,
-            text: text,
+            title: title.tr(),
+            text: text.tr(),
             icon: icon,
             showCancelButton: showCancelButton,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: confirmButtonText,
-            cancelButtonText: cancelButtonText
+            confirmButtonText: confirmButtonText.tr(),
+            cancelButtonText: cancelButtonText.tr()
         })
         .then((r) => 
         {
@@ -90,8 +90,8 @@ export class MessageHelper
         let iconType: Types = temp as Types;
 
         Swal.fire({
-            title: title,
-            html: message,
+            title: title.tr(),
+            html: message.tr(),
             icon: iconType
         });
     }

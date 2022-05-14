@@ -6,19 +6,22 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 use Doctrine\DBAL\Schema\Table;
 
+/**
+ * @extends AbstractPostgreSqlPlatformTestCase<PostgreSqlPlatform>
+ */
 class PostgreSqlPlatformTest extends AbstractPostgreSqlPlatformTestCase
 {
-    public function createPlatform() : AbstractPlatform
+    public function createPlatform(): AbstractPlatform
     {
         return new PostgreSqlPlatform();
     }
 
-    public function testSupportsPartialIndexes() : void
+    public function testSupportsPartialIndexes(): void
     {
         self::assertTrue($this->platform->supportsPartialIndexes());
     }
 
-    public function testGetCreateTableSQLWithColumnCollation() : void
+    public function testGetCreateTableSQLWithColumnCollation(): void
     {
         $table = new Table('foo');
         $table->addColumn('id', 'string');

@@ -5,23 +5,24 @@ namespace Doctrine\Tests\DBAL\Sharding;
 use Doctrine\DBAL\Sharding\PoolingShardConnection;
 use Doctrine\DBAL\Sharding\PoolingShardManager;
 use Doctrine\DBAL\Sharding\ShardChoser\ShardChoser;
+use Doctrine\Tests\DBAL\MockBuilderProxy;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class PoolingShardManagerTest extends TestCase
 {
     /**
-     * @return PoolingShardConnection|MockObject
+     * @return PoolingShardConnection&MockObject
      */
-    private function createConnectionMock() : PoolingShardConnection
+    private function createConnectionMock(): PoolingShardConnection
     {
-        return $this->getMockBuilder(PoolingShardConnection::class)
-            ->onlyMethods(['connect', 'getParams', 'fetchAll'])
+        return (new MockBuilderProxy($this->getMockBuilder(PoolingShardConnection::class)))
+            ->onlyMethods(['connect', 'getParams', 'fetchAllAssociative'])
             ->disableOriginalConstructor()
             ->getMock();
     }
 
-    private function createPassthroughShardChoser() : ShardChoser
+    private function createPassthroughShardChoser(): ShardChoser
     {
         $mock = $this->createMock(ShardChoser::class);
         $mock->expects($this->any())
@@ -33,7 +34,7 @@ class PoolingShardManagerTest extends TestCase
         return $mock;
     }
 
-    private function createStaticShardChooser() : ShardChoser
+    private function createStaticShardChooser(): ShardChoser
     {
         $mock = $this->createMock(ShardChoser::class);
         $mock->expects($this->any())
@@ -43,7 +44,7 @@ class PoolingShardManagerTest extends TestCase
         return $mock;
     }
 
-    public function testSelectGlobal() : void
+    public function testSelectGlobal(): void
     {
         $conn = $this->createConnectionMock();
         $conn->expects($this->once())->method('connect')->with($this->equalTo(0));
@@ -58,12 +59,16 @@ class PoolingShardManagerTest extends TestCase
         self::assertNull($shardManager->getCurrentDistributionValue());
     }
 
-    public function testSelectShard() : void
+    public function testSelectShard(): void
     {
         $shardId = 10;
         $conn    = $this->createConnectionMock();
-        $conn->expects($this->at(0))->method('getParams')->will($this->returnValue(['shardChoser' => $this->createPassthroughShardChoser()]));
-        $conn->expects($this->at(1))->method('connect')->with($this->equalTo($shardId));
+
+        $conn->method('getParams')
+            ->willReturn(['shardChoser' => $this->createPassthroughShardChoser()]);
+
+        $conn->method('connect')
+            ->with($shardId);
 
         $shardManager = new PoolingShardManager($conn);
         $shardManager->selectShard($shardId);
@@ -71,13 +76,11 @@ class PoolingShardManagerTest extends TestCase
         self::assertEquals($shardId, $shardManager->getCurrentDistributionValue());
     }
 
-    public function testGetShards() : void
+    public function testGetShards(): void
     {
         $conn = $this->createConnectionMock();
-        $conn->expects($this->any())->method('getParams')->will(
-            $this->returnValue(
-                ['shards' => [ ['id' => 1], ['id' => 2] ], 'shardChoser' => $this->createPassthroughShardChoser()]
-            )
+        $conn->expects($this->any())->method('getParams')->willReturn(
+            ['shards' => [['id' => 1], ['id' => 2]], 'shardChoser' => $this->createPassthroughShardChoser()]
         );
 
         $shardManager = new PoolingShardManager($conn);
@@ -86,29 +89,31 @@ class PoolingShardManagerTest extends TestCase
         self::assertEquals([['id' => 1], ['id' => 2]], $shards);
     }
 
-    public function testQueryAll() : void
+    public function testQueryAll(): void
     {
         $sql    = 'SELECT * FROM table';
         $params = [1];
         $types  = [1];
 
         $conn = $this->createConnectionMock();
-        $conn->expects($this->at(0))->method('getParams')->will($this->returnValue(
-            ['shards' => [ ['id' => 1], ['id' => 2] ], 'shardChoser' => $this->createPassthroughShardChoser()]
-        ));
-        $conn->expects($this->at(1))->method('getParams')->will($this->returnValue(
-            ['shards' => [ ['id' => 1], ['id' => 2] ], 'shardChoser' => $this->createPassthroughShardChoser()]
-        ));
-        $conn->expects($this->at(2))->method('connect')->with($this->equalTo(1));
-        $conn->expects($this->at(3))
-             ->method('fetchAll')
-             ->with($this->equalTo($sql), $this->equalTo($params), $this->equalTo($types))
-             ->will($this->returnValue([ ['id' => 1] ]));
-        $conn->expects($this->at(4))->method('connect')->with($this->equalTo(2));
-        $conn->expects($this->at(5))
-             ->method('fetchAll')
-             ->with($this->equalTo($sql), $this->equalTo($params), $this->equalTo($types))
-             ->will($this->returnValue([ ['id' => 2] ]));
+
+        $conn->method('getParams')->willReturn([
+            'shards' => [
+                ['id' => 1],
+                ['id' => 2],
+            ],
+            'shardChoser' => $this->createPassthroughShardChoser(),
+        ]);
+
+        $conn->method('connect')
+            ->withConsecutive([1], [2]);
+
+        $conn->method('fetchAllAssociative')
+             ->with($sql, $params, $types)
+             ->willReturnOnConsecutiveCalls(
+                 [['id' => 1]],
+                 [['id' => 2]]
+             );
 
         $shardManager = new PoolingShardManager($conn);
         $result       = $shardManager->queryAll($sql, $params, $types);
@@ -116,29 +121,31 @@ class PoolingShardManagerTest extends TestCase
         self::assertEquals([['id' => 1], ['id' => 2]], $result);
     }
 
-    public function testQueryAllWithStaticShardChoser() : void
+    public function testQueryAllWithStaticShardChoser(): void
     {
         $sql    = 'SELECT * FROM table';
         $params = [1];
         $types  = [1];
 
         $conn = $this->createConnectionMock();
-        $conn->expects($this->at(0))->method('getParams')->will($this->returnValue(
-            ['shards' => [ ['id' => 1], ['id' => 2] ], 'shardChoser' => $this->createStaticShardChooser()]
-        ));
-        $conn->expects($this->at(1))->method('getParams')->will($this->returnValue(
-            ['shards' => [ ['id' => 1], ['id' => 2] ], 'shardChoser' => $this->createStaticShardChooser()]
-        ));
-        $conn->expects($this->at(2))->method('connect')->with($this->equalTo(1));
-        $conn->expects($this->at(3))
-            ->method('fetchAll')
-            ->with($this->equalTo($sql), $this->equalTo($params), $this->equalTo($types))
-            ->will($this->returnValue([ ['id' => 1] ]));
-        $conn->expects($this->at(4))->method('connect')->with($this->equalTo(2));
-        $conn->expects($this->at(5))
-            ->method('fetchAll')
-            ->with($this->equalTo($sql), $this->equalTo($params), $this->equalTo($types))
-            ->will($this->returnValue([ ['id' => 2] ]));
+
+        $conn->method('getParams')->willReturn([
+            'shards' => [
+                ['id' => 1],
+                ['id' => 2],
+            ],
+            'shardChoser' => $this->createStaticShardChooser(),
+        ]);
+
+        $conn->method('connect')
+            ->withConsecutive([1], [2]);
+
+        $conn->method('fetchAllAssociative')
+            ->with($sql, $params, $types)
+            ->willReturnOnConsecutiveCalls(
+                [['id' => 1]],
+                [['id' => 2]]
+            );
 
         $shardManager = new PoolingShardManager($conn);
         $result       = $shardManager->queryAll($sql, $params, $types);

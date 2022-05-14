@@ -3,7 +3,7 @@
         <div class="block-header">
             <div class="row">
                 <div class="col-lg-7 col-md-6 col-sm-12">
-                    <h2 *ngIf="dashboards.length > 0" >Göstergeler</h2>
+                    <h2 *ngIf="dashboards.length > 0" >{{ 'Göstergeler'.tr() }}</h2>
                 </div>
                 <div class="col-lg-5 col-md-6 col-sm-12">  
                     
@@ -23,7 +23,7 @@
                             data-toggle="dropdown" role="button" aria-haspopup="true" 
                             aria-expanded="false"> 
 
-                            <span class="ti ti-plus" data-toggle="tooltip" title="Gösterge Ekle"></span> 
+                            <span class="ti ti-plus" data-toggle="tooltip" title="{{ 'Gösterge Ekle'.tr() }}"></span> 
                         </button>
 
                         <div 
@@ -45,7 +45,7 @@
                         (click)="resetDashboards()"
                         class="btn btn-sm float-right btn-primary btn-icon pull-right"> 
 
-                        <span class="ti ti-reload" data-toggle="tooltip" title="Göstergeleri sıfırla"></span> 
+                        <span class="ti ti-reload" data-toggle="tooltip" title="{{ 'Göstergeleri sıfırla'.tr() }}"></span> 
                     </button>
                     
                 </div>
@@ -53,7 +53,7 @@
         </div>
         
         <h1 *ngIf="dashboards.length == 0" style="text-align: center;">
-            Hiçbir gösterge paneliniz yok
+            {{ 'Hiçbir gösterge paneliniz yok'.tr() }}
         </h1>
 
         <gridster [options]="options">
@@ -67,8 +67,8 @@
                         <div class="card widget_2 big_icon data">
                             <div class="body">
                                 <h6>{{ item['data']['table_display_name']  }}</h6>
-                                <h2> {{ item['data']['count']  }}<small class="info"> kayıt</small></h2>
-                                <small>Toplam kayıt sayısının %{{ item['data']['percent'] }} 'i</small>
+                                <h2> {{ item['data']['count']  }}<small class="info"> {{ 'kayıt'.tr() }}</small></h2>
+                                <small>{{ 'Toplam kayıt sayısının %{0} \'i '.tr(item['data']['percent']) }}</small>
                                 <div class="progress" style="margin-bottom: 7px;">
                                     <div 
                                         class="progress-bar l-blue" role="progressbar" 
@@ -89,7 +89,7 @@
                         <div class="card widget_2 big_icon traffic"> 
                             <div class="body">
                                 <h6>{{ item['data']['display_name']  }}</h6>
-                                <h2> {{ item['data']['number']  }}<small class="info"> adet</small></h2>
+                                <h2> {{ item['data']['number']  }}<small class="info"> {{ 'adet'.tr() }}</small></h2>
                             </div>
                         </div>
                         
@@ -156,17 +156,17 @@
 
                                     <small 
                                         *ngIf="item['data']['status'] == 'success'">
-                                        Tamamlandı
+                                        {{ 'Tamamlandı'.tr() }}
                                     </small>
 
                                     <small 
                                         *ngIf="item['data']['status'] == 'error'">
-                                        Hata oluştu
+                                        {{ 'Hata oluştu'.tr() }}
                                     </small>
 
                                     <small 
                                         *ngIf="item['data']['status'] == 'no.data'">
-                                        Aktarım hiç başlamadı
+                                        {{ 'Aktarım hiç başlamadı'.tr() }}
                                     </small>
 
                                     <small
@@ -190,7 +190,7 @@
                             id="{{ item['class']+'_'+item['subClass']+'_'+item['item'] }}" 
                             class="c3_charts">
                               
-                            Bekleyin
+                            {{ 'Bekleyin'.tr() }}
                         </div>
                     </div>
                     

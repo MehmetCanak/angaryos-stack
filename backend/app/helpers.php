@@ -65,7 +65,31 @@ function clear_object_for_db($obj)
 
 function get_attr_from_cache($tableName, $requestColumn, $requestData, $responseColumn)
 {
-    return require 'HelperFunctions/'.__FUNCTION__.'.php';
+    if($requestData == NULL) return NULL;
+    if($requestData == 0 && $requestColumn == 'id') return NULL;
+
+    if($requestColumn == $responseColumn) return $requestData;
+
+    if(is_array($requestData)) $requestData = json_encode($requestData);
+
+    $cacheKey = 'tableName:'.$tableName.'|columnName:'.$requestColumn.'|columnData:'.$requestData.'|returnData:'.$responseColumn;
+    $value = Cache::rememberForever($cacheKey, function() use($cacheKey, $tableName, $requestColumn, $requestData, $responseColumn)
+    {
+        $tableName = clear_object_for_db($tableName);
+        $requestColumn = clear_object_for_db($requestColumn);
+        $requestData = clear_object_for_db($requestData);
+        
+        $record = DB::table($tableName)->where($requestColumn, $requestData)->first();
+        if($record == NULL) return NULL;
+
+        \App\Jobs\CreateRecordCaches::dispatch($record, $tableName);
+
+        if($responseColumn == '*') return $record;
+
+        return @$record->{$responseColumn};
+    });
+
+    return $value; 
 }
 
 function get_model_from_cache($tableName, $requestColumn, $requestData)
@@ -207,4 +231,26 @@ function run_periodic($start, $end, $period, $stepCallback, $params = NULL)
     }
 
     return $start;
+}
+
+function user_language_control()
+{
+    $lang = get_attr_from_cache('languages', 'id', \Auth::user()->language_id, 'name');
+    if(!$lang) return TRUE;
+    
+    return $lang == DEFAULT_LANGUAGE;
+}
+
+function tr($data, ...$args)
+{
+    $data = trim($data, " \n\r\t");
+    if(strlen($data) == 0) return '';
+    
+    global $pipe;
+    if(!isset($pipe['BaseModel'])) $pipe['BaseModel'] = new \App\BaseModel();
+    
+    $temp = $pipe['BaseModel']->TranslateBasic($data);
+    if(count($args) > 0) $temp = sprintf($temp, ...$args);
+    
+    return $temp;
 }

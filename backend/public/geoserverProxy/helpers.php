@@ -27,12 +27,10 @@ function getEnvironments()
 
 function getCqlFilterFromCache()
 {
-    global $env, $data;
+    global $data;
     
-    $m = new Memcached();
-    $m->addServer($env['MEMCACHED_HOST'], 11211);
-    
-    return $m->get('angaryos_cache:userToken:'.$data['segments'][3].'.tableName:'.$data['tableName'].'.mapFilters');
+    $key = 'userToken:'.$data['segments'][3].'.tableName:'.$data['tableName'].'.mapFilters';
+    return getMemcachedData($key);
 }
 
 function getUrlWithCqlFilter($filter)
@@ -49,7 +47,7 @@ function getUrlWithCqlFilter($filter)
             $data['requests']['CQL_FILTER'] = $filter;
     }
     
-    $url = 'http://geoserver:8080/geoserver/'.$env['GEOSERVER_WORKSPACE'].'/';
+    $url = 'http://geoserver:8080/geoserver/'.trim($env['GEOSERVER_WORKSPACE']).'/';
     $url .= strtolower($data['requests']['SERVICE']).'?';
 
     foreach($data['requests'] as $key => $value)       
@@ -58,11 +56,41 @@ function getUrlWithCqlFilter($filter)
     return $url;
 }
 
-function proxyToImage($url)
+function proxyToUrl($url)
 {
-    $imginfo = getimagesize( $url );
-    header("Content-type: ".$imginfo['mime']);
-    return readfile( $url );
+    if(strstr(strtoupper($url), 'SERVICE=WFS')) return proxyToWfsUrl($url);
+    else if(strstr(strtoupper($url), 'SERVICE=WMS')) return proxyToWmsUrl($url);
+    else exit("tanimsiz.servis");
+}
+
+function proxyToWfsUrl($url, $deep = 5)
+{
+    $f = @readfile($url);
+    if($f) return $f;
+    else
+    {
+        if($deep < 0) exit("wfs.data.okunamadi");
+        sleep(0.1);
+        return proxyToWfsUrl($url, $deep-1);
+    }
+}
+
+function proxyToWmsUrl($url, $deep = 5)
+{
+    $type = explode('&', explode('FORMAT=', $url)[1])[0];
+    if(strlen($type) == 0) $type = 'image/png';
+
+    header("Content-type: ".$type);
+
+    $f = @readfile($url);
+    if($f) return $f;
+    else
+    {
+        if($deep < 0) exit("wms.data.okunamadi");
+        
+        sleep(0.1);
+        return proxyToWmsUrl($url, $deep-1);
+    }  
 }
 
 ?>

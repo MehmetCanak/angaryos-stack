@@ -13,7 +13,8 @@ trait BaseModelGetDataColumnTrait
     
     public function getColumns($model, $tableName, $columnArrayOrSetId)
     {
-        $cacheName = 'table:'.$this->getTable().'|type:'.$tableName.'|id:'.$columnArrayOrSetId.'|columnArrayOrSetAndJoins';  
+        $langId = @\Auth::user()->language_id;        
+        $cacheName = 'table:'.$this->getTable().'|type:'.$tableName.'|id:'.$columnArrayOrSetId.'|columnArrayOrSetAndJoins|lang:'.$langId;
         [$data, $joins]  = Cache::rememberForever($cacheName, function() use($model, $tableName, $columnArrayOrSetId)
         {
             global $pipe;
@@ -28,7 +29,9 @@ trait BaseModelGetDataColumnTrait
                     break;
                 default: abort(helper('response_error', 'undefined.type:'.$tableName));  
             }
-
+            
+            $columns = $this->TranslateColumnNames($this->getTable(), $data);
+            
             if(isset($pipe['joins'])) $joins = $pipe['joins'];
             else $joins = [];
 
@@ -47,7 +50,7 @@ trait BaseModelGetDataColumnTrait
 
         return $data;
     }
-
+    
     private function getColumnsByColumnSetId($model, $id, $form = FALSE)
     {
         global $pipe;
@@ -110,16 +113,25 @@ trait BaseModelGetDataColumnTrait
 
                 $columns->{$column->name} = $column;
             }
-        
+            
+        if(strstr($this->getTable(), '_archive'))
+        {
+            $column = get_attr_from_cache('columns', 'name', 'record_id', '*');
+
+            $column->gui_type_name = get_attr_from_cache('column_gui_types', 'id', $column->column_gui_type_id, 'name');
+            $column->db_type_name = get_attr_from_cache('column_db_types', 'id', $column->column_db_type_id, 'name');
+            $column->table_alias = $this->getTable();
+
+            $columns->{$column->name} = $column;
+        }
+                
         $type = get_attr_from_cache('column_array_types', 'id', $columnArray->column_array_type_id, 'name');
         if($type == 'direct_data')
             if(strlen($columnArray->join_table_ids) > 0)
                 foreach(json_decode($columnArray->join_table_ids) as $joinId)
                 {
                     $join = get_attr_from_cache('join_tables', 'id', $joinId, '*');
-
                     if(!isset($pipe['joins'])) $pipe['joins'] = [];
-
                     array_push($pipe['joins'], $join);
                 }
         
@@ -175,7 +187,8 @@ trait BaseModelGetDataColumnTrait
     
     public function getColumnSet($model, $columnSetId, $form = FALSE)
     {
-        $cacheName = 'table:'.$this->getTable().'|type:column_sets|id:'.$columnSetId.'|columnSetObjectAndJoins';        
+        $langId = @\Auth::user()->language_id;
+        $cacheName = 'table:'.$this->getTable().'|type:column_sets|id:'.$columnSetId.'|columnSetObjectAndJoins|lang:'.$langId;
         [$data, $joins]  = Cache::rememberForever($cacheName, function() use($model, $columnSetId, $form)
         {
             global $pipe;
@@ -184,7 +197,10 @@ trait BaseModelGetDataColumnTrait
                 $data = $this->getColumnSetDefault();
             else
                 $data = $this->getColumnSetByColumnSetId($model, $columnSetId, $form);
-
+            
+            foreach($data->column_arrays as $i => $columnArray)            
+                $data->column_arrays[$i]->columns = $this->TranslateColumnNames($this->getTable(), $columnArray->columns);
+            
             if(isset($pipe['joins'])) $joins = $pipe['joins'];
             else $joins = [];
 
@@ -216,25 +232,7 @@ trait BaseModelGetDataColumnTrait
         $set->column_arrays[0]->name_basic = '';
         $set->column_arrays[0]->column_array_type = 'direct_data';
         $set->column_arrays[0]->columns = $this->getAllColumnsFromTable();
-        
-        /*$set = (Object)[];
-        $set->name = '';
-        $set->column_set_type = 'none';
-        $set->column_groups = [];
-        
-        $set->column_groups[0] = (Object)[];        
-        $set->column_groups[0]->id = 0;
-        $set->column_groups[0]->name = '';
-        $set->column_groups[0]->color_class = 'none';
-        $set->column_groups[0]->column_group_type = 'none';
-        $set->column_groups[0]->column_arrays = [];
-        
-        $set->column_groups[0]->column_arrays[0] = (Object)[];
-        $set->column_groups[0]->column_arrays[0]->id = 0;
-        $set->column_groups[0]->column_arrays[0]->name = '';
-        $set->column_groups[0]->column_arrays[0]->column_array_type = 'direct_data';
-        $set->column_groups[0]->column_arrays[0]->columns = $this->getAllColumnsFromTable();*/
-        
+                
         return $set;
     }
     
@@ -280,14 +278,6 @@ trait BaseModelGetDataColumnTrait
                 $columns->{$columnName} = $columnArray->columns->{$columnName};
                 
         return $columns;
-        
-        /*$columns = helper('get_null_object');
-        foreach($columnSet->column_groups as $columnGroup)
-            foreach($columnGroup->column_arrays as $columnArray)
-                foreach(array_keys(get_object_vars($columnArray->columns)) as $columnName)
-                    $columns->{$columnName} = $columnArray->columns->{$columnName};
-                
-        return $columns;*/
     }
     
     public function getFilteredColumnSet($columnSet, $form = FALSE)
@@ -299,14 +289,6 @@ trait BaseModelGetDataColumnTrait
         }
                 
         return $columnSet;
-        /*foreach($columnSet->column_groups as $columnGroupId => $columnGroup)
-            foreach($columnGroup->column_arrays as $columnArrayId => $columnArray)
-            {
-                $columns = $this->getFilteredColumns($columnArray->columns, $form);
-                $columnSet->column_groups[$columnGroupId]->column_arrays[$columnArrayId]->columns = $columns;
-            }
-                
-        return $columnSet;*/
     }
         
         
@@ -361,7 +343,8 @@ trait BaseModelGetDataColumnTrait
         $keys = array_keys(get_object_vars($columns));        
         $json = json_encode($keys);
         
-        $cacheName = 'tableName:'.$this->getTable().'|columnNames:'.$json.'|form:'.$form.'|filteredColumns';
+        $langId = @\Auth::user()->language_id;    
+        $cacheName = 'tableName:'.$this->getTable().'|columnNames:'.$json.'|form:'.$form.'|filteredColumns|lang:'.$langId;
         $return = Cache::rememberForever($cacheName, function() use($columns, $form)
         {   
             $disabledColumns = ['id', 'updated_at', 'created_at', 'user_id', 'own_id'];
@@ -412,7 +395,7 @@ trait BaseModelGetDataColumnTrait
                 $return->{$name}->e_sign = FALSE;
                 if(strlen(@$column->e_sign_pattern_c) > 0) $return->{$name}->e_sign = TRUE;
                 
-                $return->{$name}->column_info = $column->column_info;
+                $return->{$name}->column_info = @$column->column_info;
             }
 
             return $return;

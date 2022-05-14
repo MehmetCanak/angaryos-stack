@@ -89,8 +89,8 @@ export class JsonViewerElementComponent
                 html += '<script>';
                     html += 'var wrapper = document.getElementById("onizleme"); ';
 
-                    var temp = BaseHelper.replaceAll(this.value, '"', '\\"')
-                    temp = BaseHelper.replaceAll(temp, '\\\\"', '\\\\\\"')
+                    var temp = this.value.replaceAll('"', '\\"')
+                    temp = temp.replaceAll('\\\\"', '\\\\\\"')
                     
                     html += 'var data = JSON.parse("'+temp+'"); ';
                     html += 'var tree = jsonTree.create(data, wrapper); ';

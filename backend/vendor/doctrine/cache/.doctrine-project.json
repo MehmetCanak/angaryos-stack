@@ -5,15 +5,46 @@
     "docsSlug": "doctrine-cache",
     "versions": [
         {
-            "name": "master",
-            "branchName": "master",
-            "slug": "latest"
+            "name": "2.1",
+            "branchName": "2.1.x",
+            "slug": "2.1",
+            "current": true
+        },
+        {
+            "name": "2.0",
+            "branchName": "2.0.x",
+            "slug": "2.0",
+            "maintained": false
+        },
+        {
+            "name": "1.12",
+            "branchName": "1.12.x",
+            "slug": "1.12",
+            "maintained": true
+        },
+        {
+            "name": "1.11",
+            "branchName": "1.11.x",
+            "slug": "1.11",
+            "maintained": false
+        },
+        {
+            "name": "1.10",
+            "branchName": "1.10.x",
+            "slug": "1.10",
+            "maintained": false
+        },
+        {
+            "name": "1.9",
+            "branchName": "1.9.x",
+            "slug": "1.9",
+            "maintained": false
         },
         {
             "name": "1.8",
             "branchName": "1.8.x",
             "slug": "1.8",
-            "current": true
+            "maintained": false
         }
     ]
 }

@@ -2,7 +2,7 @@
     <div class="block-header">
         <div class="row">
             <div class="col-lg-7 col-md-6 col-sm-12">
-                <h4>Veri Aktarma Yardımcısı</h4>
+                <h4>{{ 'Veri Aktarma Yardımcısı'.tr() }}</h4>
             </div>
             <div class="col-lg-5 col-md-6 col-sm-12">                
                 <button class="btn btn-sm btn-secondary btn-icon float-right right_icon_toggle_btn" type="button"><i class="zmdi zmdi-arrow-right"></i></button>
@@ -15,7 +15,7 @@
             <table class="light-table">
                 <tbody>
                     <tr>
-                        <td>Veri Kaynağı</td>
+                        <td>{{ 'Veri Kaynağı'.tr() }}</td>
                     </tr>
                     <tr>
                         <td colspan="2">
@@ -39,7 +39,7 @@
             <table class="light-table">
                 <tbody>
                     <tr>
-                        <td>Veri Akış Yönü</td>
+                        <td>{{ 'Veri Akış Yönü'.tr() }}</td>
                     </tr>
                     <tr>
                         <td colspan="2">
@@ -63,7 +63,7 @@
             <table class="light-table">
                 <tbody>
                     <tr>
-                        <td>Tekrar (cron)</td>
+                        <td>{{ 'Tekrar (cron)'.tr() }}</td>
                     </tr>
                     <tr>
                         <td colspan="2">
@@ -84,7 +84,7 @@
             <table class="light-table">
                 <tbody>
                     <tr>
-                        <td>Uzak Tablo</td>
+                        <td>{{ 'Uzak Tablo'.tr() }}</td>
                     </tr>
                     <tr>
                         <td colspan="2">
@@ -108,7 +108,7 @@
         <div *ngIf="isElementSelected('data_source_rmt_table_id') && remoteColumns.length > 0"  class="box box-primary">
             
             <button type="button" class="btn btn-success btn-block" (click)="autoSelectColumns()">
-                Otomatik Seçim
+                {{ 'Otomatik Seçim'.tr() }}
             </button>
 
             <br>
@@ -133,14 +133,14 @@
                                     (click)="cloneColumn(column)"
                                     class="badge badge-primary">
 
-                                Kolonu Kopyala
+                                {{ 'Kolonu Kopyala'.tr() }}
                             </span>
                             <span *ngIf="columnHasValue(column)"
                                     style="cursor: pointer;margin-right: 10px;"
                                     (click)="removeRelation(column)"
                                     class="badge badge-danger">
 
-                                Seçimi Temizle
+                                {{ 'Seçimi Temizle'.tr() }}
                             </span>
 
                             <span *ngIf="columnHasValue(column) && !columnHasChanger(column)" 
@@ -148,7 +148,7 @@
                                 (click)="addDataChanger(column)" 
                                 class="badge badge-warning">
 
-                                Kod Ekle
+                                {{ 'Kod Ekle'.tr() }}
                             </span>
 
 
@@ -164,7 +164,7 @@
         </div>
         
         <button id="save-button" type="button" [class]="'btn btn-primary btn-block ' + (!isDataEntegratable() ? 'disabled' : '')" (click)="save()">
-            Veri Aktarımı Başlat
+            {{ 'Veri Aktarımı Başlat'.tr() }}
         </button>
 
     </div>

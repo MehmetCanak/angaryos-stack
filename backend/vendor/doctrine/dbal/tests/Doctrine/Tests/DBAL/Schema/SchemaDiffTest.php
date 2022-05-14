@@ -13,19 +13,27 @@ use PHPUnit\Framework\TestCase;
 
 class SchemaDiffTest extends TestCase
 {
-    public function testSchemaDiffToSql() : void
+    public function testSchemaDiffToSql(): void
     {
         $diff     = $this->createSchemaDiff();
         $platform = $this->createPlatform(true);
 
         $sql = $diff->toSql($platform);
 
-        $expected = ['create_schema', 'drop_orphan_fk', 'alter_seq', 'drop_seq', 'create_seq', 'create_table', 'create_foreign_key', 'drop_table', 'alter_table'];
-
-        self::assertEquals($expected, $sql);
+        self::assertEquals([
+            'create_schema',
+            'drop_orphan_fk',
+            'alter_seq',
+            'drop_seq',
+            'create_seq',
+            'create_table',
+            'create_foreign_key',
+            'drop_table',
+            'alter_table',
+        ], $sql);
     }
 
-    public function testSchemaDiffToSaveSql() : void
+    public function testSchemaDiffToSaveSql(): void
     {
         $diff     = $this->createSchemaDiff();
         $platform = $this->createPlatform(false);
@@ -38,48 +46,49 @@ class SchemaDiffTest extends TestCase
     }
 
     /**
-     * @return AbstractPlatform|MockObject
+     * @return AbstractPlatform&MockObject
      */
     private function createPlatform(bool $unsafe)
     {
-        /** @var AbstractPlatform|MockObject $platform */
         $platform = $this->createMock(AbstractPlatform::class);
         $platform->expects($this->exactly(1))
             ->method('getCreateSchemaSQL')
             ->with('foo_ns')
-            ->will($this->returnValue('create_schema'));
+            ->willReturn('create_schema');
         if ($unsafe) {
             $platform->expects($this->exactly(1))
                  ->method('getDropSequenceSql')
                  ->with($this->isInstanceOf(Sequence::class))
-                 ->will($this->returnValue('drop_seq'));
+                 ->willReturn('drop_seq');
         }
+
         $platform->expects($this->exactly(1))
                  ->method('getAlterSequenceSql')
                  ->with($this->isInstanceOf(Sequence::class))
-                 ->will($this->returnValue('alter_seq'));
+                 ->willReturn('alter_seq');
         $platform->expects($this->exactly(1))
                  ->method('getCreateSequenceSql')
                  ->with($this->isInstanceOf(Sequence::class))
-                 ->will($this->returnValue('create_seq'));
+                 ->willReturn('create_seq');
         if ($unsafe) {
             $platform->expects($this->exactly(1))
                      ->method('getDropTableSql')
                      ->with($this->isInstanceOf(Table::class))
-                     ->will($this->returnValue('drop_table'));
+                     ->willReturn('drop_table');
         }
+
         $platform->expects($this->exactly(1))
                  ->method('getCreateTableSql')
                  ->with($this->isInstanceOf(Table::class))
-                 ->will($this->returnValue(['create_table']));
+                 ->willReturn(['create_table']);
         $platform->expects($this->exactly(1))
                  ->method('getCreateForeignKeySQL')
                  ->with($this->isInstanceOf(ForeignKeyConstraint::class))
-                 ->will($this->returnValue('create_foreign_key'));
+                 ->willReturn('create_foreign_key');
         $platform->expects($this->exactly(1))
                  ->method('getAlterTableSql')
                  ->with($this->isInstanceOf(TableDiff::class))
-                 ->will($this->returnValue(['alter_table']));
+                 ->willReturn(['alter_table']);
         if ($unsafe) {
             $platform->expects($this->exactly(1))
                      ->method('getDropForeignKeySql')
@@ -87,22 +96,23 @@ class SchemaDiffTest extends TestCase
                          $this->isInstanceOf(ForeignKeyConstraint::class),
                          $this->isInstanceOf(Table::class)
                      )
-                     ->will($this->returnValue('drop_orphan_fk'));
+                     ->willReturn('drop_orphan_fk');
         }
+
         $platform->expects($this->exactly(1))
                 ->method('supportsSchemas')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
         $platform->expects($this->exactly(1))
                 ->method('supportsSequences')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
         $platform->expects($this->exactly(2))
                 ->method('supportsForeignKeyConstraints')
-                ->will($this->returnValue(true));
+                ->willReturn(true);
 
         return $platform;
     }
 
-    public function createSchemaDiff() : SchemaDiff
+    public function createSchemaDiff(): SchemaDiff
     {
         $diff                              = new SchemaDiff();
         $diff->newNamespaces['foo_ns']     = 'foo_ns';

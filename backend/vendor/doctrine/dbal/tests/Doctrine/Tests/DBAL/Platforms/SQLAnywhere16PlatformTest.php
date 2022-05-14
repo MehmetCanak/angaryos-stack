@@ -5,15 +5,16 @@ namespace Doctrine\Tests\DBAL\Platforms;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\SQLAnywhere16Platform;
 use Doctrine\DBAL\Schema\Index;
+use UnexpectedValueException;
 
 class SQLAnywhere16PlatformTest extends SQLAnywhere12PlatformTest
 {
-    public function createPlatform() : AbstractPlatform
+    public function createPlatform(): AbstractPlatform
     {
         return new SQLAnywhere16Platform();
     }
 
-    public function testGeneratesCreateIndexWithAdvancedPlatformOptionsSQL() : void
+    public function testGeneratesCreateIndexWithAdvancedPlatformOptionsSQL(): void
     {
         self::assertEquals(
             'CREATE UNIQUE INDEX fooindex ON footable (a, b) WITH NULLS DISTINCT',
@@ -62,9 +63,9 @@ class SQLAnywhere16PlatformTest extends SQLAnywhere12PlatformTest
         parent::testGeneratesCreateIndexWithAdvancedPlatformOptionsSQL();
     }
 
-    public function testThrowsExceptionOnInvalidWithNullsNotDistinctIndexOptions() : void
+    public function testThrowsExceptionOnInvalidWithNullsNotDistinctIndexOptions(): void
     {
-        $this->expectException('UnexpectedValueException');
+        $this->expectException(UnexpectedValueException::class);
 
         $this->platform->getCreateIndexSQL(
             new Index(

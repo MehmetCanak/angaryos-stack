@@ -92,12 +92,22 @@ class User extends Authenticatable
                 
                 $temp['name'] = $name;
                 
-                $temp['display_name'] = get_attr_from_cache('tables', 'name', $name, 'display_name');
-                $temp['display_name'] = helper('reverse_clear_string_for_db', $temp['display_name']);
-
-                $temp['link_description'] = get_attr_from_cache('tables', 'name', $name, 'link_description');
-                $temp['link_description'] = helper('reverse_clear_string_for_db', $temp['link_description']);
-
+                $base = new \App\BaseModel();
+                $tableInfo = $base->TranslateTableInfo(get_attr_from_cache('tables', 'name', $name, '*'));
+                
+                if(gettype($tableInfo) == 'string')
+                {
+                    $temp['display_name'] = $tableInfo;
+                    
+                    $temp['link_description'] = get_attr_from_cache('tables', 'name', $name, 'link_description');
+                    $temp['link_description'] = helper('reverse_clear_string_for_db', $temp['link_description']);
+                }
+                else
+                {
+                    $temp['display_name'] = $tableInfo[0];
+                    $temp['link_description'] = $tableInfo[1];
+                }
+                
                 $tableGroup = $this->getTableGruop($temp['id']);
                 if($tableGroup != NULL)
                     $groupId= $tableGroup->id;
@@ -121,7 +131,7 @@ class User extends Authenticatable
             $temp = 
             [
                 'id' => $tableGroup->id,
-                'name_basic' => $tableGroup->name_basic,
+                'name_basic' => tr($tableGroup->name_basic),
                 'table_ids' => json_decode($tableGroup->table_ids),
                 'image' => @helper('get_url_from_file', json_decode($tableGroup->image))[0],
                 'icon' => $tableGroup->icon,
@@ -132,7 +142,7 @@ class User extends Authenticatable
         $temp = 
         [
             'id' => 0,
-            'name_basic' => 'Diğer',
+            'name_basic' => tr('Diğer'),
             'table_ids' => [],
             'image' => '2020/01/01/other.png',
             'icon' => 'zmdi-aspect-ratio',
@@ -152,7 +162,7 @@ class User extends Authenticatable
         $tables = $this->getTableListForMenu();
         $tableGroups = $this->getTableGroupListForMenu($tables);
         $additionalLinks = $this->getAdditionalLinks();
-
+        
         return 
         [
             'tables' => $tables,
@@ -175,8 +185,8 @@ class User extends Authenticatable
             unset($link->created_at);
             unset($link->updated_at);
             
-            $link->name_basic = helper('reverse_clear_string_for_db', $link->name_basic); 
-            $link->link_description = helper('reverse_clear_string_for_db', @$link->link_description); 
+            $link->name_basic = tr($link->name_basic);
+            $link->link_description = tr($link->link_description);
             $link->payload = helper('reverse_clear_string_for_db', $link->payload);  
             array_push($links, $link);
         }
@@ -216,8 +226,12 @@ class User extends Authenticatable
     
     private function getLayerInfo($tableName, $tableAuth)
     {
+        $base = new \App\BaseModel();
+        $tableInfo = $base->TranslateTableInfo(get_attr_from_cache('tables', 'name', $tableName, '*'));
+        if(is_array($tableInfo)) $tableInfo = $tableInfo[0];
+                
         $info['base_url'] = '';
-        $info['display_name'] = get_attr_from_cache('tables', 'name', $tableName, 'display_name');        
+        $info['display_name'] = $tableInfo;        
         $info['display_name'] = helper('reverse_clear_string_for_db', $info['display_name']);
         
         $info['legend_url'] = get_attr_from_cache('tables', 'name', $tableName, 'legend_url');
@@ -273,8 +287,10 @@ class User extends Authenticatable
         $info['style'] = helper('seo', $info['style']);
         
         if($info['type'] == 'wfs' && strlen($info['style']) > 0) 
+        {
             $info['style'] = get_attr_from_cache('layer_styles', 'id', $layer->layer_style_id, 'style_code');
-               
+            $info['style'] = helper('reverse_clear_string_for_db', $info['style']);
+        }      
         
         $info['period'] = $layer->period;
         if(strlen($info['period']) == 0) $info['period'] = 0;
@@ -313,13 +329,16 @@ class User extends Authenticatable
         $info['style'] = helper('seo', $info['style']);
         
         if($info['type'] == 'wfs' && strlen($info['style']) > 0) 
+        {
             $info['style'] = get_attr_from_cache('layer_styles', 'id', $layer->layer_style_id, 'style_code');
+            $info['style'] = helper('reverse_clear_string_for_db', $info['style']);
+        }
         
         $info['period'] = $layer->period;
         if(strlen($info['period']) == 0) $info['period'] = 0;
         
         $info['filter'] = FALSE;
-        $info['search'] = FALSE;
+        $info['search'] = TRUE;
         $info['layerAuth'] = TRUE;
 
         $info['legend_url'] = $layer->legend_url;
@@ -358,7 +377,7 @@ class User extends Authenticatable
                 $temp = $this->getExternalLayerInfo($layer);
                 $name = str_replace(':', '__', $layer->layer_name);
 
-                $mapAuths[$name] = $temp;
+                $mapAuths[$name.'__temp__ext_'.$id] = $temp;
             }
             
         if(isset($this->auths['custom_layers']))
@@ -429,11 +448,25 @@ class User extends Authenticatable
     {
         if(!$this->authTree)
         {
-            $cacheName = 'tableName:users|id:'.$this->id.'|authTree';
+            $langId = @\Auth::user()->language_id;   
+            $cacheName = 'tableName:users|id:'.$this->id.'|authTree|lang:'.$langId;
             $this->authTree = Cache::rememberForever($cacheName, function() use($auths)
             {      
+                $base = new \App\BaseModel();
+                
                 $auths = json_decode($auths);
-                return $this->getAuthTree($auths);
+                $tree = $this->getAuthTree($auths);
+                
+                if(isset($tree['tables'] ))
+                    foreach($tree['tables'] as $name => $data)
+                    {
+                        $tableInfo = $base->TranslateTableInfo(get_attr_from_cache('tables', 'name', $name, '*'));
+                        if(is_array($tableInfo)) $tableInfo = $tableInfo[0];
+
+                        $tree['tables'][$name]['display_name'] = $tableInfo;
+                    }
+                
+                return $tree;
             });
         }
         

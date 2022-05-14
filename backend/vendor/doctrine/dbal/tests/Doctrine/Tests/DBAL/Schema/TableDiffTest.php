@@ -11,28 +11,22 @@ use PHPUnit\Framework\TestCase;
 
 class TableDiffTest extends TestCase
 {
-    /** @var AbstractPlatform|MockObject */
+    /** @var AbstractPlatform&MockObject */
     private $platform;
 
-    public function setUp() : void
+    public function setUp(): void
     {
         $this->platform = $this->createMock(AbstractPlatform::class);
     }
 
-    /**
-     * @group DBAL-1013
-     */
-    public function testReturnsName() : void
+    public function testReturnsName(): void
     {
         $tableDiff = new TableDiff('foo');
 
         self::assertEquals(new Identifier('foo'), $tableDiff->getName($this->platform));
     }
 
-    /**
-     * @group DBAL-1016
-     */
-    public function testPrefersNameFromTableObject() : void
+    public function testPrefersNameFromTableObject(): void
     {
         $tableMock = $this->getMockBuilder(Table::class)
             ->disableOriginalConstructor()
@@ -44,15 +38,12 @@ class TableDiffTest extends TestCase
         $tableMock->expects($this->once())
             ->method('getQuotedName')
             ->with($this->platform)
-            ->will($this->returnValue('foo'));
+            ->willReturn('foo');
 
         self::assertEquals(new Identifier('foo'), $tableDiff->getName($this->platform));
     }
 
-    /**
-     * @group DBAL-1013
-     */
-    public function testReturnsNewName() : void
+    public function testReturnsNewName(): void
     {
         $tableDiff = new TableDiff('foo');
 

@@ -1,9 +1,13 @@
 <?php
+
+declare(strict_types=1);
+
 namespace GuzzleHttp\Tests\Psr7;
 
-use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\StreamInterface;
 
 class Str implements StreamInterface
 {
@@ -13,7 +17,7 @@ class Str implements StreamInterface
 /**
  * @covers GuzzleHttp\Psr7\StreamDecoratorTrait
  */
-class StreamDecoratorTraitTest extends BaseTest
+class StreamDecoratorTraitTest extends TestCase
 {
     /** @var StreamInterface */
     private $a;
@@ -22,111 +26,110 @@ class StreamDecoratorTraitTest extends BaseTest
     /** @var resource */
     private $c;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->c = fopen('php://temp', 'r+');
         fwrite($this->c, 'foo');
         fseek($this->c, 0);
-        $this->a = Psr7\stream_for($this->c);
+        $this->a = Psr7\Utils::streamFor($this->c);
         $this->b = new Str($this->a);
     }
 
-    public function testCatchesExceptionsWhenCastingToString()
+    /**
+     * @requires PHP < 7.4
+     */
+    public function testCatchesExceptionsWhenCastingToString(): void
     {
-        $s = $this->getMockBuilder('Psr\Http\Message\StreamInterface')
-            ->setMethods(['read'])
-            ->getMockForAbstractClass();
-        $s->expects($this->once())
+        $s = $this->createMock(Str::class);
+        $s->expects(self::once())
             ->method('read')
-            ->will($this->throwException(new \Exception('foo')));
+            ->willThrowException(new \RuntimeException('foo'));
         $msg = '';
-        set_error_handler(function ($errNo, $str) use (&$msg) { $msg = $str; });
+        set_error_handler(function (int $errNo, string $str) use (&$msg): void {
+            $msg = $str;
+        });
         echo new Str($s);
         restore_error_handler();
-        $this->assertContains('foo', $msg);
+        self::assertStringContainsString('foo', $msg);
     }
 
-    public function testToString()
+    public function testToString(): void
     {
-        $this->assertEquals('foo', (string) $this->b);
+        self::assertSame('foo', (string) $this->b);
     }
 
-    public function testHasSize()
+    public function testHasSize(): void
     {
-        $this->assertEquals(3, $this->b->getSize());
+        self::assertSame(3, $this->b->getSize());
     }
 
-    public function testReads()
+    public function testReads(): void
     {
-        $this->assertEquals('foo', $this->b->read(10));
+        self::assertSame('foo', $this->b->read(10));
     }
 
-    public function testCheckMethods()
+    public function testCheckMethods(): void
     {
-        $this->assertEquals($this->a->isReadable(), $this->b->isReadable());
-        $this->assertEquals($this->a->isWritable(), $this->b->isWritable());
-        $this->assertEquals($this->a->isSeekable(), $this->b->isSeekable());
+        self::assertSame($this->a->isReadable(), $this->b->isReadable());
+        self::assertSame($this->a->isWritable(), $this->b->isWritable());
+        self::assertSame($this->a->isSeekable(), $this->b->isSeekable());
     }
 
-    public function testSeeksAndTells()
+    public function testSeeksAndTells(): void
     {
         $this->b->seek(1);
-        $this->assertEquals(1, $this->a->tell());
-        $this->assertEquals(1, $this->b->tell());
+        self::assertSame(1, $this->a->tell());
+        self::assertSame(1, $this->b->tell());
         $this->b->seek(0);
-        $this->assertEquals(0, $this->a->tell());
-        $this->assertEquals(0, $this->b->tell());
+        self::assertSame(0, $this->a->tell());
+        self::assertSame(0, $this->b->tell());
         $this->b->seek(0, SEEK_END);
-        $this->assertEquals(3, $this->a->tell());
-        $this->assertEquals(3, $this->b->tell());
+        self::assertSame(3, $this->a->tell());
+        self::assertSame(3, $this->b->tell());
     }
 
-    public function testGetsContents()
+    public function testGetsContents(): void
     {
-        $this->assertEquals('foo', $this->b->getContents());
-        $this->assertEquals('', $this->b->getContents());
+        self::assertSame('foo', $this->b->getContents());
+        self::assertSame('', $this->b->getContents());
         $this->b->seek(1);
-        $this->assertEquals('oo', $this->b->getContents());
+        self::assertSame('oo', $this->b->getContents());
     }
 
-    public function testCloses()
+    public function testCloses(): void
     {
         $this->b->close();
-        $this->assertFalse(is_resource($this->c));
+        self::assertFalse(is_resource($this->c));
     }
 
-    public function testDetaches()
+    public function testDetaches(): void
     {
         $this->b->detach();
-        $this->assertFalse($this->b->isReadable());
+        self::assertFalse($this->b->isReadable());
     }
 
-    public function testWrapsMetadata()
+    public function testWrapsMetadata(): void
     {
-        $this->assertSame($this->b->getMetadata(), $this->a->getMetadata());
-        $this->assertSame($this->b->getMetadata('uri'), $this->a->getMetadata('uri'));
+        self::assertSame($this->b->getMetadata(), $this->a->getMetadata());
+        self::assertSame($this->b->getMetadata('uri'), $this->a->getMetadata('uri'));
     }
 
-    public function testWrapsWrites()
+    public function testWrapsWrites(): void
     {
         $this->b->seek(0, SEEK_END);
         $this->b->write('foo');
-        $this->assertEquals('foofoo', (string) $this->a);
+        self::assertSame('foofoo', (string) $this->a);
     }
 
-    /**
-     * @expectedException \UnexpectedValueException
-     */
-    public function testThrowsWithInvalidGetter()
+    public function testThrowsWithInvalidGetter(): void
     {
+        $this->expectException(\UnexpectedValueException::class);
         $this->b->foo;
     }
 
-    /**
-     * @expectedException \BadMethodCallException
-     */
-    public function testThrowsWhenGetterNotImplemented()
+    public function testThrowsWhenGetterNotImplemented(): void
     {
+        $this->expectException(\BadMethodCallException::class);
         $s = new BadStream();
         $s->stream;
     }
@@ -136,5 +139,7 @@ class BadStream
 {
     use StreamDecoratorTrait;
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 }

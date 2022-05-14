@@ -25,7 +25,7 @@
                         (click)="addRelationRecord(columnName)"  
                         class="btn btn-sm btn-primary">
                         
-                        Ekle
+                        {{ 'Ekle'.tr() }}
                     </button>
 
                     <button 
@@ -33,7 +33,7 @@
                         (click)="editRelationRecord(columnName)"  
                         class="btn btn-sm btn-primary">
                         
-                        Düzenle
+                        {{ 'Düzenle'.tr() }}
                     </button>
                     
                     <button 
@@ -41,7 +41,7 @@
                         (click)="cloneRelationRecord(columnName)"  
                         class="btn btn-sm btn-primary">
                         
-                        Klonla
+                        {{ 'Klonla'.tr() }}
                     </button>
                 </td>
                 
@@ -53,7 +53,7 @@
                         name="{{ columnName }}-DTS"
                         id="{{ columnName }}-DTS" >
                         
-                        <option value="">Seçenekler</option>
+                        <option value="">{{ 'Seçenekler'.tr() }}</option>
                         <option 
                             *ngFor="let opt of inFormDataTransportSelectOptions" 
                             value="{{ opt['source'] }}">
@@ -118,7 +118,7 @@
                 <button class="btn btn-danger btn-block" 
                     style="position: absolute; margin: -35 20 0 20; width: -webkit-fill-available;"
                     (click)="closeModal(inFormElementId+'inFormModal')"
-                    type="button">İptal
+                    type="button">{{ 'İptal'.tr() }}
                 </button>
             </div>
         </div>

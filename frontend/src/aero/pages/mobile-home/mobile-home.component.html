@@ -20,7 +20,7 @@
                                 <div class="blogitem-content">
                                     <div class="blogitem-header">
                                         <div class="blogitem-meta">
-                                            <span><i class="zmdi zmdi-account"></i>Yazan: <a> {{ item['user_id'] }}</a></span>
+                                            <span><i class="zmdi zmdi-account"></i>{{ 'Yazan'.tr() }}: <a> {{ item['user_id'] }}</a></span>
                                         </div>
                                         <div class="blogitem-share">
                                             <ul class="list-unstyled mb-0">
@@ -32,7 +32,7 @@
                                     </div>
                                     <h5><a>{{ item['name_basic'] }}</a></h5>
                                     <p>{{ item['summary'] }}</p>
-                                    <a (click)="detail(item)" style="color:white;" class="btn btn-primary btn-block">Devamını Oku</a>
+                                    <a (click)="detail(item)" style="color:white;" class="btn btn-primary btn-block">{{ 'Devamını Oku'.tr() }}</a>
                                 </div>
                             </div>
                         </div>
@@ -42,7 +42,7 @@
 
             <div *ngIf="news.length == 0">
                 <br><br>
-                <h3 style="text-align: center;">Bekleyin...</h3>
+                <h3 style="text-align: center;">{{ 'Bekleyin...'.tr() }}</h3>
             </div>
             
         </div>

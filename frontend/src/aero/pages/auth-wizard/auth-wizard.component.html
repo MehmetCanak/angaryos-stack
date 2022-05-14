@@ -2,7 +2,7 @@
     <div class="block-header">
         <div class="row">
             <div class="col-lg-7 col-md-6 col-sm-12">
-                <h4>Yetki Oluşturma Yardımcısı</h4>
+                <h4>{{ "Yetki Oluşturma Yardımcısı".tr() }}</h4>
             </div>
             <div class="col-lg-5 col-md-6 col-sm-12">                
                 <button class="btn btn-sm btn-secondary btn-icon float-right right_icon_toggle_btn" type="button"><i class="zmdi zmdi-arrow-right"></i></button>
@@ -20,9 +20,9 @@
                         <td colspan="2">
                             <form-element 
                                 type="string" [name]="'name_basic'" 
-                                value="XXX Tablosu XXX İçin XXX Yetki Grubu" value-json="" 
+                                value="{{ 'XXX Tablosu XXX İçin XXX Yetki Grubu'.tr() }}" value-json="" 
                                 class="form-control" [columnName]="'name_basic'" 
-                                placeholder="Ad" 
+                                placeholder="{{ 'Ad'.tr() }}" 
                                 up-column-name="" up-form-id="" srid="">
                             
                             </form-element>
@@ -35,7 +35,7 @@
             <table class="light-table">
                 <tbody>
                     <tr>
-                        <td>Açıklama</td>
+                        <td>{{ "Açıklama".tr() }}</td>
                     </tr>
                     <tr>
                         <td colspan="2">
@@ -43,7 +43,7 @@
                                 type="text" [name]="'description'" 
                                 value="" value-json="" 
                                 class="form-control" [columnName]="'description'"
-                                placeholder="Açıklama" 
+                                placeholder="{{ 'Açıklama'.tr() }}" 
                                 up-column-name="" up-form-id="" srid="">
                             
                             </form-element>
@@ -112,7 +112,7 @@
                                                                 (click)="createAuth(type)" 
                                                                 class="btn btn-sm btn-primary float-right">
                                                                 
-                                                                Ekle
+                                                                {{ 'Ekle'.tr() }}
                                                             </button>
                                                         </td>
                                                     </tr><tr>
@@ -153,7 +153,7 @@
                                         <td>
                                             <input style="font-size: 12px;margin: 0 0 10px 0;height: 30;background-color: white;"
                                                 class="form-control" 
-                                                placeholder="Yetki Arama" 
+                                                placeholder="{{ 'Yetki Arama'.tr() }}" 
                                                 (input)="searchChanged($event)"
                                                 name="auth_search" 
                                                 id="auth_search" />
@@ -187,14 +187,14 @@
         </div>      
         
         <div class="box box-primary">
-            <h5>Yetki Atanacak</h5>
+            <h5>{{ "Yetki Atanacak".tr() }}</h5>
             
             <div class="form-group" id="all_user-group" style="margin: 20 0;">
                 <table class="light-table">
                     <tbody>
                         <tr>
                             <td style="width: 200px;">
-                                Tüm kullanıcılara ata
+                                {{ "Tüm kullanıcılara ata".tr() }}
                                 <input type="checkbox" name="all_user" id="all_user">
                             </td>
                         </tr>
@@ -206,7 +206,7 @@
                 <table class="light-table">
                     <tbody>
                         <tr>
-                            <td>Şu kullanıcılara ata</td>
+                            <td>{{ "Şu kullanıcılara ata".tr() }}</td>
                         </tr>
                         <tr>
                             <td colspan="2">
@@ -215,7 +215,7 @@
                                     value="" value-json="" 
                                     baseUrl="tables/users"
                                     class="form-control" [columnName]="'user_id'" 
-                                    placeholder="Kullanıcılar" 
+                                    placeholder="{{ 'Kullanıcılar'.tr() }}" 
                                     up-column-name="" up-form-id="" srid="">
                                 
                                 </form-element>
@@ -230,7 +230,7 @@
                 <table class="light-table">
                     <tbody>
                         <tr>
-                            <td>Müdürlüklerdeki tüm kullanıcılara ata</td>
+                            <td>{{ "Müdürlüklerdeki tüm kullanıcılara ata".tr() }}</td>
                         </tr>
                         <tr>
                             <td colspan="2">
@@ -239,7 +239,7 @@
                                     value="" value-json="" 
                                     baseUrl="tables/users"
                                     class="form-control" [columnName]="'department_id'" 
-                                    placeholder="Müdürlükler" 
+                                    placeholder="{{ 'Müdürlükler'.tr() }}" 
                                     up-column-name="" up-form-id="" srid="">
                                 
                                 </form-element>
@@ -253,7 +253,7 @@
                 <table class="light-table">
                     <tbody>
                         <tr>
-                            <td>Şu yetkiye sahip tüm kullanıcılara ata</td>
+                            <td>{{ "Şu yetkiye sahip tüm kullanıcılara ata".tr() }}</td>
                         </tr>
                         <tr>
                             <td colspan="2">
@@ -262,7 +262,7 @@
                                     value="" value-json="" 
                                     baseUrl="tables/users"
                                     class="form-control" [columnName]="'auths'" 
-                                    placeholder="Yetkiler" 
+                                    placeholder="{{ 'Yetkiler'.tr() }}" 
                                     up-column-name="" up-form-id="" srid="">
                                 
                                 </form-element>
@@ -274,7 +274,7 @@
         </div>
 
         <button id="save-button" type="button" [class]="'btn btn-primary float-right btn-block ' + (loading ? 'disabled' : '')" (click)="save()">
-            Yetki Oluştur
+            {{ "Yetki Oluştur".tr() }}
         </button>
 
     </div>
@@ -299,7 +299,8 @@
                 <button class="btn btn-danger btn-block" 
                     style="position: absolute; margin: -35 20 0 20; width: -webkit-fill-available;"
                     (click)="closeModal(inFormElementId+'inFormModal')"
-                    type="button">İptal
+                    type="button"> 
+                    {{ "İptal".tr() }}
                 </button>
             </div>
         </div>

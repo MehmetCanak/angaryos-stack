@@ -2,21 +2,23 @@
 
 namespace Doctrine\Tests\DBAL\Functional\Driver\Mysqli;
 
+use Doctrine\DBAL\Driver\Mysqli\Connection;
 use Doctrine\DBAL\Driver\Mysqli\Driver;
-use Doctrine\DBAL\Driver\Mysqli\MysqliConnection;
 use Doctrine\DBAL\Driver\Mysqli\MysqliException;
 use Doctrine\Tests\DbalFunctionalTestCase;
-use const MYSQLI_OPT_CONNECT_TIMEOUT;
-use function extension_loaded;
+use Doctrine\Tests\TestUtil;
 
+use function array_merge;
+
+use const MYSQLI_OPT_CONNECT_TIMEOUT;
+
+/**
+ * @requires extension mysqli
+ */
 class ConnectionTest extends DbalFunctionalTestCase
 {
-    protected function setUp() : void
+    protected function setUp(): void
     {
-        if (! extension_loaded('mysqli')) {
-            $this->markTestSkipped('mysqli is not installed.');
-        }
-
         parent::setUp();
 
         if ($this->connection->getDriver() instanceof Driver) {
@@ -26,27 +28,22 @@ class ConnectionTest extends DbalFunctionalTestCase
         $this->markTestSkipped('MySQLi only test.');
     }
 
-    protected function tearDown() : void
-    {
-        parent::tearDown();
-    }
-
-    public function testDriverOptions() : void
+    public function testDriverOptions(): void
     {
         $driverOptions = [MYSQLI_OPT_CONNECT_TIMEOUT => 1];
 
-        $connection = $this->getConnection($driverOptions);
-        self::assertInstanceOf(MysqliConnection::class, $connection);
+        $this->getConnection($driverOptions);
+        $this->expectNotToPerformAssertions();
     }
 
-    public function testUnsupportedDriverOption() : void
+    public function testUnsupportedDriverOption(): void
     {
         $this->expectException(MysqliException::class);
 
         $this->getConnection(['hello' => 'world']); // use local infile
     }
 
-    public function testPing() : void
+    public function testPing(): void
     {
         $conn = $this->getConnection([]);
         self::assertTrue($conn->ping());
@@ -55,16 +52,18 @@ class ConnectionTest extends DbalFunctionalTestCase
     /**
      * @param mixed[] $driverOptions
      */
-    private function getConnection(array $driverOptions) : MysqliConnection
+    private function getConnection(array $driverOptions): Connection
     {
-        return new MysqliConnection(
-            [
-                'host' => $GLOBALS['db_host'],
-                'dbname' => $GLOBALS['db_name'],
-                'port' => $GLOBALS['db_port'],
-            ],
-            $GLOBALS['db_username'],
-            $GLOBALS['db_password'],
+        $params = TestUtil::getConnectionParams();
+
+        if (isset($params['driverOptions'])) {
+            $driverOptions = array_merge($params['driverOptions'], $driverOptions);
+        }
+
+        return new Connection(
+            $params,
+            $params['user'] ?? '',
+            $params['password'] ?? '',
             $driverOptions
         );
     }

@@ -10,6 +10,7 @@ return array(
     'Mockery' => array($vendorDir . '/mockery/mockery/library'),
     'Highlight\\' => array($vendorDir . '/scrivo/highlight.php'),
     'HighlightUtilities\\' => array($vendorDir . '/scrivo/highlight.php'),
+    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
     'CrEOF\\Spatial' => array($vendorDir . '/creof/doctrine2-spatial/lib'),
     'CrEOF\\Geo\\WKT' => array($vendorDir . '/creof/wkt-parser/lib'),
     'CrEOF\\Geo\\WKB' => array($vendorDir . '/creof/wkb-parser/lib'),

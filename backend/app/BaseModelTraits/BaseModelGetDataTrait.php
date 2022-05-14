@@ -2,6 +2,7 @@
 
 namespace App\BaseModelTraits;
 
+use App\Libraries\ColumnClassificationLibrary;
 use \App\BaseModel;
 use Cache;
 use DB;
@@ -39,6 +40,7 @@ trait BaseModelGetDataTrait
         $records = $params->model->get();
         
         $records = $this->updateRecordsDataForResponse($records, $params->columns);
+        $records = $this->UpdateRecordsDataForTranslate($records, $params->columns);
         
         $records = $this->updateRecordsESignDataForResponse($records, $tableInfo, $params->columns);
         
@@ -104,14 +106,18 @@ trait BaseModelGetDataTrait
     {
         if(substr($name, -8, 8) == '_archive') $name = substr($name, 0, -8);
 
-        $cacheName = 'tableName:'.$name.'|tableInfo'; 
+        $langId = @\Auth::user()->language_id;
+        $cacheName = 'tableName:'.$name.'|tableInfo|lang:'.$langId; 
         $tableInfo = Cache::rememberForever($cacheName, function() use($name)
         {      
             $table = get_attr_from_cache('tables', 'name', $name, '*');
             
             $tableInfo = helper('get_null_object');
             $tableInfo->name = $name;
-            $tableInfo->display_name = $table->display_name;
+            
+            $temp = $this->TranslateTableInfo($table);
+            $tableInfo->display_name = gettype($temp) == 'string' ? $temp : $temp[0];
+            
             $tableInfo->up_table = false;
             
             $control = DB::table('sub_tables')
@@ -201,6 +207,19 @@ trait BaseModelGetDataTrait
                     $records[$i]->_e_sings[$column->name] = NULL; 
         }
         
+        return $records;
+    }
+
+    public function UpdateRecordsDataForTranslate($records, $columns)
+    {
+        global $pipe;
+        
+        foreach($columns as $column)
+        {
+            if(strlen($column->column_table_relation_id) == 0) continue;
+            $records = $this->TranslateRecordsData($pipe['table'], $column, $records);
+        }
+
         return $records;
     }
     

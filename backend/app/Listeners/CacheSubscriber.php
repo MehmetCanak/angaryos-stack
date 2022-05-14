@@ -70,7 +70,7 @@ class CacheSubscriber
 
             case 'column_sets':
             case 'column_arrays':
-                $this->clearColumnSetOrArrayCache($record);
+                $this->clearColumnSetOrArrayCacheViaRecord($record);
                 break;
             
             case 'e_signs':
@@ -96,7 +96,7 @@ class CacheSubscriber
         foreach($tokens as $token) Cache::forget('userToken:'.$token->token.'.eSingCount');        
     }
 
-    private function clearColumnSetOrArrayCache($setOrArray)
+    private function clearColumnSetOrArrayCacheViaRecord($setOrArray)
     {
         ClearCache::{$this->dispatchType}('allAuths');
         
@@ -207,8 +207,6 @@ class CacheSubscriber
         foreach($groups as $group)
             $this->clearAuthGroupsCache($group);
         
-        
-        
         //niye burada anlaşılamadı
         /*$keys = $this->getCacheKeys();
         foreach($keys as $key)
@@ -275,7 +273,10 @@ class CacheSubscriber
         //$temp = $this->dispatchType;
         $temp = 'dispatchNow';//sync forever for users cache
 
-        ClearCache::{$temp}('tableName:users|id:'.$record->id.'|authTree');
+        $langIds = DB::table('languages')->pluck('id');
+        foreach($langIds as $langId)
+            ClearCache::{$temp}('tableName:users|id:'.$record->id.'|authTree|lang:'.$langId);
+            
         ClearCache::{$temp}('user:'.$record->id.'|tableGroups');
         
         $keys = $this->getCacheKeys();
@@ -303,6 +304,8 @@ class CacheSubscriber
     
     private function clearColumnSetsOrArraysCache($table)
     {
+        $langIds = DB::table('languages')->pluck('id');
+        
         ClearCache::{$this->dispatchType}('allAuths');
         
         $ts = ['column_sets', 'column_arrays'];        
@@ -311,8 +314,14 @@ class CacheSubscriber
             $key = 'table:'.$table->name.'|type:'.$t.'|id:0'; 
             ClearCache::{$this->dispatchType}($key);
             
-            $key = 'table:'.$table->name.'|type:column_sets|id:0|columnSetObjectAndJoins'; 
-            ClearCache::{$this->dispatchType}($key);
+            foreach($langIds as $langId)
+            {
+                $key = 'table:'.$table->name.'|type:column_sets|id:0|columnSetObjectAndJoins|lang:'.$langId;  
+                ClearCache::{$this->dispatchType}($key);
+            
+                $key = 'table:'.$table->name.'|type:column_arrays|id:0|columnArrayOrSetAndJoins|lang:'.$langId; 
+                ClearCache::{$this->dispatchType}($key);
+            }
             
             $key = 'tableName:'.$table->name.'|allColumsFromDbWithTableAliasAndGuiType'; 
             ClearCache::{$this->dispatchType}($key);
@@ -323,10 +332,22 @@ class CacheSubscriber
                 $key = 'table:'.$table->name.'|type:'.$t.'|id:'.$rec->id; 
                 ClearCache::{$this->dispatchType}($key);
                 
-                if($t == 'column_sets')
+                foreach($langIds as $langId)
                 {
-                    $key = 'table:'.$table->name.'|type:column_sets|id:'.$rec->id.'|columnSetObjectAndJoins'; 
-                    ClearCache::{$this->dispatchType}($key);
+                    if($t == 'column_sets')
+                    {
+                        $key = 'table:'.$table->name.'|type:column_sets|id:'.$rec->id.'|columnSetObjectAndJoins|lang:'.$langId; 
+                        ClearCache::{$this->dispatchType}($key);
+
+                        $key = 'table:'.$table->name.'|type:column_sets|id:'.$rec->id.'|columnArrayOrSetAndJoins|lang:'.$langId; 
+                        ClearCache::{$this->dispatchType}($key);
+                    }
+
+                    if($t == 'column_arrays')
+                    {
+                        $key = 'table:'.$table->name.'|type:column_arrays|id:'.$rec->id.'|columnArrayOrSetAndJoins|lang:'.$langId; 
+                        ClearCache::{$this->dispatchType}($key);
+                    }  
                 }
             }
         }
@@ -380,7 +401,10 @@ class CacheSubscriber
     public function clearTableCache($table)
     {
         ClearCache::{$this->dispatchType}('allAuths');
-        ClearCache::{$this->dispatchType}('tableName:'.$table->name.'|tableInfo');
+        
+        $langIds = DB::table('languages')->pluck('id');
+        foreach($langIds as $langId)
+            ClearCache::{$this->dispatchType}('tableName:'.$table->name.'|tableInfo|lang:'.$langId);
         
         $this->clearTablesAndColumnCommonCache($table);
     }

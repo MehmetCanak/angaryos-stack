@@ -97,10 +97,10 @@ export class ShortcutsComponent
             this.allShortcuts.push({
                 "id": "map",
                 "icon": "zmdi-map", 
-                "text":"Harita", 
+                "text":"Harita".tr(), 
                 "link":'/'+BaseHelper.angaryosUrlPath+'/map',
                 "type":"navigate",
-                "type_display":"Standart Link",
+                "type_display":"Standart Link".tr(),
                 'selected': false
             });
         
@@ -115,7 +115,7 @@ export class ShortcutsComponent
                     "text": menu["additionalLinks"][i]["name_basic"], 
                     "link":'', 
                     "type":"additionalLink",
-                    "type_display":"Ek Link",
+                    "type_display":"Ek Link".tr(),
                     "data": menu["additionalLinks"][i],
                     'selected': false
                 });
@@ -133,9 +133,9 @@ export class ShortcutsComponent
                 this.allShortcuts.push({
                         "id": "mission"+missionId,
                         "icon": "zmdi-grid", 
-                        "text": missionId+ ". Görevi Tetikle", 
+                        "text": "{0}. Görevi Tetikle".tr(missionId), 
                         "type":"mission",
-                        "type_display":"Görev Tetikleme",
+                        "type_display":"Görev Tetikleme".tr(),
                         'selected': false,
                         "data": missionId
                     });
@@ -158,10 +158,10 @@ export class ShortcutsComponent
                     this.allShortcuts.push({
                         "id": 'tableList'+table["id"],
                         "icon": "zmdi-grid", 
-                        "text": table["display_name"] + " Listesi", 
+                        "text":  "{0} Listesi".tr(table["display_name"]), 
                         "link": 'table/'+tableName, 
                         "type":"navigate",
-                        "type_display":"Standart Link",
+                        "type_display":"Standart Link".tr(),
                         'selected': false
                     });
                 }
@@ -171,10 +171,10 @@ export class ShortcutsComponent
                     this.allShortcuts.push({
                         "id": 'tableCreate'+table["id"],
                         "icon": "zmdi-grid", 
-                        "text": table["display_name"] + " Yeni Kayıt Ekle", 
+                        "text":  "{0} Yeni Kayıt Ekle".tr(table["display_name"]), 
                         "link": 'table/'+tableName+"/create", 
                         "type":"navigate",
-                        "type_display":"Standart Link",
+                        "type_display":"Standart Link".tr(),
                         'selected': false
                     });
                 }
@@ -357,7 +357,7 @@ export class ShortcutsComponent
         await this.sessionHelper.doHttpRequest("GET", url) 
         .then(async (data) => 
         {
-            this.messageHelper.sweetAlert("Tetikleme başarılı: "+data["message"], "Başarı", "success");
+            this.messageHelper.sweetAlert("Tetikleme başarılı: ".tr()+data["message"], "Başarı", "success");
         })
         .catch((e) =>  
         {

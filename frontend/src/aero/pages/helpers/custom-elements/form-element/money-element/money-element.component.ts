@@ -49,7 +49,6 @@ export class MoneyElementComponent
             () => this.addInputMask());        
     }
 
-    
     dataChanged(event)
     {
         var upId = this.upFormId;
@@ -58,8 +57,8 @@ export class MoneyElementComponent
 
         var temp = $(upId + ' #'+this.name+"-display").val();
         temp = temp.trim();
-        temp = BaseHelper.replaceAll(temp, '.', '');
-        temp = BaseHelper.replaceAll(temp, ',', '.');
+        temp = temp.replaceAll('.', '');
+        temp = temp.replaceAll(',', '.');
         
         $(upId + ' [name="'+this.name+'"]').val(temp);
         

@@ -106,7 +106,7 @@ export class AuthWizardComponent
 
         if(target != 'other' && target != 'search' && source.indexOf(want) == -1)
         {
-            this.messageHelper.toastMessage("Bu gruba ekleyemezsiniz! ("+target+")");
+            this.messageHelper.toastMessage("Bu gruba ekleyemezsiniz! ({0})".tr(target));
             return;
         }
         

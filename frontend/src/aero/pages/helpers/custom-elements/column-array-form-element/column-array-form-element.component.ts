@@ -49,7 +49,7 @@ export class ColumnArrayFormElementComponent
     ) 
     { 
         this.fillDefaultVariables();
-        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js');
+        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js'.tr());
     }
     
     ngOnChanges()
@@ -356,7 +356,7 @@ export class ColumnArrayFormElementComponent
                 for(var j = 0; j < data['errors'][keys[i]].length; j++)
                     list += ' - '+data['errors'][keys[i]][j] + '<br>';
 
-            this.messageHelper.sweetAlert("Klon esnasında bazı hatalar oluştu!<br><br>"+(list), "Hata", "warning");
+            this.messageHelper.sweetAlert("Klon esnasında bazı hatalar oluştu!".tr()+"<br><br>"+list, "Hata", "warning");
         }
         else if(data['message'] == 'success')
         {

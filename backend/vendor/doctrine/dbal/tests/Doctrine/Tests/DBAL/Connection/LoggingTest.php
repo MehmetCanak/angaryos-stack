@@ -8,11 +8,14 @@ use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Logging\SQLLogger;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\Tests\DBAL\AssertionCompatibility;
 use PHPUnit\Framework\TestCase;
 
 final class LoggingTest extends TestCase
 {
-    public function testLogExecuteQuery() : void
+    use AssertionCompatibility;
+
+    public function testLogExecuteQuery(): void
     {
         $driverConnection = $this->createStub(DriverConnection::class);
         $driverConnection->method('query')
@@ -22,16 +25,16 @@ final class LoggingTest extends TestCase
             ->executeQuery('SELECT * FROM table');
     }
 
-    public function testLogExecuteUpdate() : void
+    public function testLogExecuteStatement(): void
     {
         $this->createConnection(
             $this->createStub(DriverConnection::class),
             'UPDATE table SET foo = ?'
         )
-            ->executeUpdate('UPDATE table SET foo = ?');
+            ->executeStatement('UPDATE table SET foo = ?');
     }
 
-    public function testLogPrepareExecute() : void
+    public function testLogPrepareExecute(): void
     {
         $driverConnection = $this->createStub(DriverConnection::class);
         $driverConnection->method('prepare')
@@ -42,7 +45,7 @@ final class LoggingTest extends TestCase
             ->execute();
     }
 
-    private function createConnection(DriverConnection $driverConnection, string $expectedSQL) : Connection
+    private function createConnection(DriverConnection $driverConnection, string $expectedSQL): Connection
     {
         $driver = $this->createStub(Driver::class);
         $driver->method('connect')
@@ -54,7 +57,7 @@ final class LoggingTest extends TestCase
         $logger->expects($this->once())
             ->method('startQuery')
             ->with($this->equalTo($expectedSQL), $this->equalTo([]));
-        $logger->expects($this->at(1))
+        $logger->expects($this->once())
             ->method('stopQuery');
 
         $connection = new Connection([], $driver);

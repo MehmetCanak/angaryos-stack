@@ -2,11 +2,15 @@
 
 namespace Doctrine\Tests\DBAL\Functional\Schema;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\OraclePlatform;
 use Doctrine\DBAL\Schema;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\BinaryType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Tests\TestUtil;
+
 use function array_map;
 
 class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
@@ -14,7 +18,12 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
     /** @var bool */
     private static $privilegesGranted = false;
 
-    protected function setUp() : void
+    protected function supportsPlatform(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof OraclePlatform;
+    }
+
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -22,17 +31,17 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
             return;
         }
 
-        if (! isset($GLOBALS['db_username'])) {
+        if (! isset($GLOBALS['db_user'])) {
             self::markTestSkipped('Username must be explicitly specified in connection parameters for this test');
         }
 
-        TestUtil::getTempConnection()
-            ->exec('GRANT ALL PRIVILEGES TO ' . $GLOBALS['db_username']);
+        TestUtil::getPrivilegedConnection()
+            ->exec('GRANT ALL PRIVILEGES TO ' . $GLOBALS['db_user']);
 
         self::$privilegesGranted = true;
     }
 
-    public function testRenameTable() : void
+    public function testRenameTable(): void
     {
         $this->schemaManager->tryMethod('DropTable', 'list_tables_test');
         $this->schemaManager->tryMethod('DropTable', 'list_tables_test_new_name');
@@ -42,10 +51,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
 
         $tables = $this->schemaManager->listTables();
 
-        self::assertHasTable($tables, 'list_tables_test_new_name');
+        self::assertHasTable($tables);
     }
 
-    public function testListTableWithBinary() : void
+    public function testListTableWithBinary(): void
     {
         $tableName = 'test_binary_table';
 
@@ -66,15 +75,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertFalse($table->getColumn('column_binary')->getFixed());
     }
 
-    /**
-     * @group DBAL-472
-     * @group DBAL-1001
-     */
-    public function testAlterTableColumnNotNull() : void
+    public function testAlterTableColumnNotNull(): void
     {
-        $comparator = new Schema\Comparator();
-        $tableName  = 'list_table_column_notnull';
-        $table      = new Schema\Table($tableName);
+        $tableName = 'list_table_column_notnull';
+        $table     = new Table($tableName);
 
         $table->addColumn('id', 'integer');
         $table->addColumn('foo', 'integer');
@@ -93,7 +97,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $diffTable->changeColumn('foo', ['notnull' => false]);
         $diffTable->changeColumn('bar', ['length' => 1024]);
 
-        $this->schemaManager->alterTable($comparator->diffTable($table, $diffTable));
+        $diff = (new Comparator())->diffTable($table, $diffTable);
+        self::assertNotFalse($diff);
+
+        $this->schemaManager->alterTable($diff);
 
         $columns = $this->schemaManager->listTableColumns($tableName);
 
@@ -102,10 +109,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($columns['bar']->getNotnull());
     }
 
-    public function testListDatabases() : void
+    public function testListDatabases(): void
     {
-        // We need the temp connection that has privileges to create a database.
-        $sm = TestUtil::getTempConnection()->getSchemaManager();
+        // We need a privileged connection to create the database.
+        $sm = TestUtil::getPrivilegedConnection()->getSchemaManager();
 
         $sm->dropAndCreateDatabase('c##test_create_database');
 
@@ -115,13 +122,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertContains('c##test_create_database', $databases);
     }
 
-    /**
-     * @group DBAL-831
-     */
-    public function testListTableDetailsWithDifferentIdentifierQuotingRequirements() : void
+    public function testListTableDetailsWithDifferentIdentifierQuotingRequirements(): void
     {
         $primaryTableName    = '"Primary_Table"';
-        $offlinePrimaryTable = new Schema\Table($primaryTableName);
+        $offlinePrimaryTable = new Table($primaryTableName);
         $offlinePrimaryTable->addColumn(
             '"Id"',
             'integer',
@@ -138,7 +142,7 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $offlinePrimaryTable->setPrimaryKey(['"Id"']);
 
         $foreignTableName    = 'foreign';
-        $offlineForeignTable = new Schema\Table($foreignTableName);
+        $offlineForeignTable = new Table($foreignTableName);
         $offlineForeignTable->addColumn('id', 'integer', ['autoincrement' => true]);
         $offlineForeignTable->addColumn('"Fk"', 'integer');
         $offlineForeignTable->addIndex(['"Fk"'], '"Fk_index"');
@@ -168,7 +172,11 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($onlinePrimaryTable->hasColumn('"Id"'));
         self::assertSame('"Id"', $onlinePrimaryTable->getColumn('"Id"')->getQuotedName($platform));
         self::assertTrue($onlinePrimaryTable->hasPrimaryKey());
-        self::assertSame(['"Id"'], $onlinePrimaryTable->getPrimaryKey()->getQuotedColumns($platform));
+
+        $primaryKey = $onlinePrimaryTable->getPrimaryKey();
+
+        self::assertNotNull($primaryKey);
+        self::assertSame(['"Id"'], $primaryKey->getQuotedColumns($platform));
 
         self::assertTrue($onlinePrimaryTable->hasColumn('select'));
         self::assertSame('"select"', $onlinePrimaryTable->getColumn('select')->getQuotedName($platform));
@@ -202,7 +210,11 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($onlineForeignTable->hasColumn('id'));
         self::assertSame('ID', $onlineForeignTable->getColumn('id')->getQuotedName($platform));
         self::assertTrue($onlineForeignTable->hasPrimaryKey());
-        self::assertSame(['ID'], $onlineForeignTable->getPrimaryKey()->getQuotedColumns($platform));
+
+        $primaryKey = $onlineForeignTable->getPrimaryKey();
+
+        self::assertNotNull($primaryKey);
+        self::assertSame(['ID'], $primaryKey->getQuotedColumns($platform));
 
         self::assertTrue($onlineForeignTable->hasColumn('"Fk"'));
         self::assertSame('"Fk"', $onlineForeignTable->getColumn('"Fk"')->getQuotedName($platform));
@@ -226,23 +238,20 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         );
     }
 
-    public function testListTableColumnsSameTableNamesInDifferentSchemas() : void
+    public function testListTableColumnsSameTableNamesInDifferentSchemas(): void
     {
         $table = $this->createListTableColumns();
         $this->schemaManager->dropAndCreateTable($table);
 
         $otherTable = new Table($table->getName());
         $otherTable->addColumn('id', Types::STRING);
-        TestUtil::getTempConnection()->getSchemaManager()->dropAndCreateTable($otherTable);
+        TestUtil::getPrivilegedConnection()->getSchemaManager()->dropAndCreateTable($otherTable);
 
         $columns = $this->schemaManager->listTableColumns($table->getName(), $this->connection->getUsername());
         self::assertCount(7, $columns);
     }
 
-    /**
-     * @group DBAL-1234
-     */
-    public function testListTableIndexesPrimaryKeyConstraintNameDiffersFromIndexName() : void
+    public function testListTableIndexesPrimaryKeyConstraintNameDiffersFromIndexName(): void
     {
         $table = new Table('list_table_indexes_pk_id_test');
         $table->setSchemaConfig($this->schemaManager->createSchemaConfig());
@@ -252,7 +261,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
 
         // Adding a primary key on already indexed columns
         // Oracle will reuse the unique index, which cause a constraint name differing from the index name
-        $this->schemaManager->createConstraint(new Schema\Index('id_pk_id_index', ['id'], true, true), 'list_table_indexes_pk_id_test');
+        $this->schemaManager->createConstraint(
+            new Schema\Index('id_pk_id_index', ['id'], true, true),
+            'list_table_indexes_pk_id_test'
+        );
 
         $tableIndexes = $this->schemaManager->listTableIndexes('list_table_indexes_pk_id_test');
 
@@ -262,10 +274,7 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($tableIndexes['primary']->isPrimary());
     }
 
-    /**
-     * @group DBAL-2555
-     */
-    public function testListTableDateTypeColumns() : void
+    public function testListTableDateTypeColumns(): void
     {
         $table = new Table('tbl_date');
         $table->addColumn('col_date', 'date');
@@ -281,8 +290,10 @@ class OracleSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertSame('datetimetz', $columns['col_datetimetz']->getType()->getName());
     }
 
-    public function testCreateAndListSequences() : void
+    public function testCreateAndListSequences(): void
     {
-        self::markTestSkipped("Skipped for uppercase letters are contained in sequences' names. Fix the schema manager in 3.0.");
+        self::markTestSkipped(
+            "Skipped for uppercase letters are contained in sequences' names. Fix the schema manager in 3.0."
+        );
     }
 }

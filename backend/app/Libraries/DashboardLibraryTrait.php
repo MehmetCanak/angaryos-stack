@@ -14,7 +14,7 @@ trait DashboardLibraryTrait
     {
         return 
         [
-            'display_name' => 'Kuyruktaki İş Sayısı',
+            'display_name' => tr('Kuyruktaki İş Sayısı'),
             'number' => DB::table('jobs')->count('*')
         ];
     }
@@ -31,21 +31,21 @@ trait DashboardLibraryTrait
         [
             [
                 'source' => '',
-                'display' => 'Seçiniz'
+                'display' => tr('Seçiniz')
             ],
             [
                 'source' => 'secenek1',
-                'display' => '1. Seçenek'
+                'display' => tr('1. Seçenek')
             ],
             [
                 'source' => 'secenek2',
-                'display' => '2. Seçenek'
+                'display' => tr('2. Seçenek')
             ]
         ];
 
         return 
         [
-            'title' => 'En Aktif Üyeler',
+            'title' => tr('En Aktif Üyeler'),
             'combobox' => $comboBoxData,
             'data' => $data
         ];
@@ -55,7 +55,7 @@ trait DashboardLibraryTrait
     {
         return 
         [
-            "title" => "Aylara göre kıyaslama",
+            "title" => tr("Aylara göre kıyaslama"),
             "data" => 
             [
                 "columns" =>
@@ -73,9 +73,9 @@ trait DashboardLibraryTrait
                 ],
                 "names" => [
                     // name of each serie
-                    'data1' => 'Data1',
-                    'data2' => 'Data2',
-                    'data3' => 'Data3',
+                    'data1' => tr('Data1'),
+                    'data2' => tr('Data2'),
+                    'data3' => tr('Data3'),
                 ]
             ],
             "axis" =>
@@ -83,7 +83,7 @@ trait DashboardLibraryTrait
                 "x" =>
                 [
                     "type" => 'category',
-                    "categories" => ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+                    "categories" => [tr('Oca'), tr('Şub'), tr('Mar'), tr('Nis'), tr('May'), tr('Haz'), tr('Tem'), tr('Ağu'), tr('Eyl'), tr('Eki'), tr('Kas'), tr('Ara')]
                 ],
             ],
             "legend" => 
@@ -102,7 +102,7 @@ trait DashboardLibraryTrait
     {
         return 
         [
-            "title" => "Aylara göre kullanım",
+            "title" => tr("Aylara göre kullanım"),
             "data" => 
             [
                 "columns" =>
@@ -120,9 +120,9 @@ trait DashboardLibraryTrait
                 ],
                 "names" => [
                     // name of each serie
-                    'data1' => 'Data1',
-                    'data2' => 'Data2',
-                    'data3' => 'Data3',
+                    'data1' => tr('Data1'),
+                    'data2' => tr('Data2'),
+                    'data3' => tr('Data3'),
                 ]
             ],
             "axis" => [ ],

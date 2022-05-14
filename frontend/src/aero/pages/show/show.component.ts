@@ -162,7 +162,7 @@ export class ShowComponent
     
     fillDataAdditionalVariables(data)
     {
-        data['title'] = DataHelper.getTitleOrDefault(data['column_set']['name'], 'Bilgi Kartı');
+        data['title'] = DataHelper.getTitleOrDefault(data['column_set']['name'], 'Bilgi Kartı'.tr());
         
         data['record']['json'] = BaseHelper.objectToJsonStr(data['record']);
             

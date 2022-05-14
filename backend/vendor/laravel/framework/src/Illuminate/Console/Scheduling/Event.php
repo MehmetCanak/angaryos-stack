@@ -10,8 +10,8 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Reflector;
 use Illuminate\Support\Traits\Macroable;
 use Psr\Http\Client\ClientExceptionInterface;
 use Symfony\Component\Process\Process;
@@ -319,10 +319,10 @@ class Event
      */
     protected function expressionPasses()
     {
-        $date = Carbon::now();
+        $date = Date::now();
 
         if ($this->timezone) {
-            $date->setTimezone($this->timezone);
+            $date = $date->setTimezone($this->timezone);
         }
 
         return CronExpression::factory($this->expression)->isDue($date->toDateTimeString());
@@ -577,7 +577,7 @@ class Event
         return function (Container $container, HttpClient $http) use ($url) {
             try {
                 $http->get($url);
-            } catch (ClientExceptionInterface | TransferException $e) {
+            } catch (ClientExceptionInterface|TransferException $e) {
                 $container->make(ExceptionHandler::class)->report($e);
             }
         };
@@ -672,7 +672,7 @@ class Event
      */
     public function when($callback)
     {
-        $this->filters[] = is_callable($callback) ? $callback : function () use ($callback) {
+        $this->filters[] = Reflector::isCallable($callback) ? $callback : function () use ($callback) {
             return $callback;
         };
 
@@ -687,7 +687,7 @@ class Event
      */
     public function skip($callback)
     {
-        $this->rejects[] = is_callable($callback) ? $callback : function () use ($callback) {
+        $this->rejects[] = Reflector::isCallable($callback) ? $callback : function () use ($callback) {
             return $callback;
         };
 

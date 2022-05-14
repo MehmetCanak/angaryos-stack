@@ -7,6 +7,7 @@ use Throwable;
 
 class SynchronousProcess implements Runnable
 {
+    use ProcessCallbacks;
     protected $id;
 
     protected $task;
@@ -14,8 +15,6 @@ class SynchronousProcess implements Runnable
     protected $output;
     protected $errorOutput;
     protected $executionTime;
-
-    use ProcessCallbacks;
 
     public function __construct(callable $task, int $id)
     {
@@ -42,6 +41,10 @@ class SynchronousProcess implements Runnable
     {
         $startTime = microtime(true);
 
+        if ($this->task instanceof Task) {
+            $this->task->configure();
+        }
+
         try {
             $this->output = $this->task instanceof Task
                 ? $this->task->run()
@@ -53,7 +56,7 @@ class SynchronousProcess implements Runnable
         }
     }
 
-    public function stop()
+    public function stop($timeout = 0): void
     {
     }
 

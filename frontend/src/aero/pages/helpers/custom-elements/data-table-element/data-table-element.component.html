@@ -4,7 +4,7 @@
             <table class="light-table">
                 <tr *ngIf="!lightTable">
                     <td>
-                        <h2 (click)="dataReload()" style="cursor: pointer" id="pageTitle">
+                        <h2 (click)="pageNameClicked()" style="cursor: pointer" id="pageTitle">
                             {{ data['table_info']['display_name'] }}
                         </h2>
                     </td>
@@ -67,10 +67,20 @@
                         </div>
                     </td>
                     <td>
+                        <button
+                            *ngIf="iconVisibility['groupMode']"
+                            class="btn btn-sm float-right btn-primary btn-icon pull-right" 
+                            data-toggle2="tooltip" title="{{ 'Grup Modu'.tr() }}" 
+                            (click)="groupByModeSettingModalOpen()">
+
+                            <span class="ti ti-layers-alt"></span>
+                        </button>
+                    </td>
+                    <td>
                         <a *ngIf="iconVisibility['create']"
                             id="create-button"
                             class="btn btn-sm float-right btn-primary btn-icon pull-right" 
-                            data-toggle2="tooltip" title="Yeni Ekle" 
+                            data-toggle2="tooltip" title="{{ 'Yeni Ekle'.tr() }}" 
                             (click)="navigate('create')">
 
                             <span class="ti ti-plus"></span>
@@ -91,7 +101,7 @@
                                 data-toggle="dropdown" role="button" aria-haspopup="true" 
                                 aria-expanded="false"> 
 
-                                <span class="ti ti-search" data-toggle2="tooltip" title="Detaylı Arama"></span> 
+                                <span class="ti ti-search" data-toggle2="tooltip" title="{{ 'Detaylı Arama'.tr() }}"></span> 
                             </button>
 
                             <div 
@@ -125,7 +135,7 @@
                                 data-toggle="dropdown" role="button" aria-haspopup="true" 
                                 aria-expanded="false"> 
 
-                                <span data-toggle2="tooltip" title="Raporlar" class="ti ti-arrow-down"></span> 
+                                <span data-toggle2="tooltip" title="{{ 'Raporlar'.tr() }}" class="ti ti-arrow-down"></span> 
                             </button>
 
                             <div
@@ -138,7 +148,7 @@
                                     class="dropdown-item"
                                     ngbDropdownItem>
 
-                                    Standart Rapor
+                                    {{ 'Standart Rapor'.tr() }}
                                 </button>   
                                 
                                 <button
@@ -157,7 +167,7 @@
                         <a *ngIf="iconVisibility['deleted']"
                             id="delete-button" 
                             class="btn btn-sm float-right btn-primary btn-icon pull-right" 
-                            data-toggle2="tooltip" title="Silinmiş Kayıtlar" 
+                            data-toggle2="tooltip" title="{{ 'Silinmiş Kayıtlar'.tr() }}" 
                             (click)="navigate('deleted')">
                             
                             <span class="ti ti-trash"></span>
@@ -197,53 +207,14 @@
                                             role="row">
                                             
                                             <td>                                                
-                                                <div 
-                                                    class="d-inline-block" 
-                                                    ngbDropdown
-                                                    #columnVisibilityListDrop="ngbDropdown">
+                                                <button
+                                                    (click)="columnVisibilityModalOpen()"
+                                                    class="btn btn-sm float-right btn-primary btn-icon pull-right" 
+                                                    role="button" aria-haspopup="true" 
+                                                    aria-expanded="false"> 
 
-                                                    <button
-                                                        (focus)="columnVisibilityListDrop.open()"
-                                                        ngbDropdownAnchor
-                                                        id="report-button"
-                                                        class="btn btn-sm btn-primary btn-icon" 
-                                                        data-toggle="dropdown" role="button" aria-haspopup="true" 
-                                                        aria-expanded="false"> 
-
-                                                        <span data-toggle2="tooltip" title="Kolon Gizle/Aç" class="ti ti-menu-alt"></span> 
-                                                    </button>
-
-                                                    <div
-                                                        ngbDropdownMenu 
-                                                        style="max-height: 200; overflow: auto;"
-                                                        aria-labelledby="dropdownManual">
-                                                        
-                                                        <button
-                                                            (click)="showAllColumns()"
-                                                            class="dropdown-item"
-                                                            ngbDropdownItem>
-
-                                                            Tümünü Göster
-                                                        </button> 
-                                                        
-                                                        <button
-                                                            (click)="hideAllColumns()"
-                                                            class="dropdown-item"
-                                                            ngbDropdownItem>
-
-                                                            Tümünü Gizle
-                                                        </button>  
-
-                                                        <button
-                                                            *ngFor="let columnName of data['columnNames']"
-                                                            (click)="toggleColumnVisibility(columnName)"
-                                                            class="dropdown-item"
-                                                            ngbDropdownItem>
-
-                                                            {{ data['columns'][columnName]['display_name'] }}
-                                                        </button>                    
-                                                    </div>
-                                                </div>
+                                                    <span data-toggle="tooltip" title="{{ 'Kolon Gizle/Aç'.tr() }}" class="ti ti-menu-alt"></span> 
+                                                </button>
                                             </td>
                                             <td cdkDrag style="cursor: pointer;min-width: 100px !important;"
                                                 *ngFor="let columnName of params['columnNames']"
@@ -358,7 +329,7 @@
                                                 </button>
                                     
                                                 <button *ngIf="record['iconVisibility']['userImitation']"
-                                                    data-toggle2="tooltip" title="Kullanıcıyı taklit et"
+                                                    data-toggle2="tooltip" title="{{ 'Kullanıcıyı taklit et'.tr() }}"
                                                     class="btn btn-sm btn-primary btn-icon pull-right" 
                                                     (click)="userImitation(record)"> 
                                                     
@@ -382,7 +353,7 @@
                                                 </button>
                                     
                                                 <button *ngIf="iconVisibility['authWizard']"
-                                                    data-toggle2="tooltip" title="Yetki oluşturma yardımcısı"
+                                                    data-toggle2="tooltip" title="{{ 'Yetki oluşturma yardımcısı'.tr() }}"
                                                     class="btn btn-sm btn-primary btn-icon pull-right" 
                                                     (click)="authWizard(record)"> 
                                                     
@@ -390,7 +361,7 @@
                                                 </button>
                                     
                                                 <button *ngIf="iconVisibility['dataEntegrator']"
-                                                    data-toggle2="tooltip" title="Veri Aktarma Yardımcısı"
+                                                    data-toggle2="tooltip" title="{{ 'Veri Aktarma Yardımcısı'.tr() }}"
                                                     class="btn btn-sm btn-primary btn-icon pull-right" 
                                                     (click)="dataEntegrator(record)"> 
                                                     
@@ -400,7 +371,7 @@
                                                 <span
                                                     style="margin-top: 7px !important; cursor: pointer;height: 7; width: 7; padding: 0;"
                                                     data-toggle="tooltip" 
-                                                    title="Bu kayıt e-imza bekliyor" 
+                                                    title="{{ 'Bu kayıt e-imza bekliyor'.tr() }}" 
                                                     class="badge badge-warning" 
                                                     *ngIf="!archiveTable && record['_e_sings'][0] == false">
                                                     &nbsp;
@@ -497,7 +468,7 @@
                                                             <span
                                                                 data-toggle="tooltip" 
                                                                 style="cursor: pointer;height: 7; width: 7; padding: 0;"
-                                                                title="Bu kolon e-imza bekliyor" 
+                                                                title="{{ 'Bu kolon e-imza bekliyor'.tr() }}" 
                                                                 class="badge badge-warning" >
                                                                 &nbsp;
                                                             </span>
@@ -507,7 +478,7 @@
                                                             <span
                                                                 data-toggle="tooltip" 
                                                                 style="cursor: pointer;height: 7; width: 7; padding: 0;"
-                                                                title="e-imza tamamlandı" 
+                                                                title="{{ 'e-imza tamamlandı'.tr() }}" 
                                                                 class="badge badge-success" >
                                                                 &nbsp;
                                                             </span>
@@ -521,7 +492,7 @@
                                                 style="text-align: center;font-size: 20px;"
                                                 colspan="300">
                                                 
-                                                Kayıt Yok
+                                                {{ 'Kayıt Yok'.tr() }}
                                             </td>
                                         </tr>
                                         <tr 
@@ -530,7 +501,7 @@
                                             class="odd operations"
                                             >
 
-                                            <th>{{ data['all_records_count'] }} Kayıt</th>
+                                            <th>{{ '{0} Kayıt'.tr(data['all_records_count']) }}</th>
                                             <td *ngFor="let columnName of params['columnNames']">
                                                 <b [innerHTML]="data['collectiveInfosHtml'][columnName]"></b>
                                             </td>
@@ -547,7 +518,7 @@
                                 <td>
                                     <table style="padding: 0; margin: 0;">
                                         <tr>
-                                            <td>&nbsp;Kayıt:</td>
+                                            <td>&nbsp;{{ 'Kayıt'.tr() }}:</td>
                                             <td>
                                                 <select class="form-control ms"
                                                     style="width: 60px; height: 26px; padding: 0 5px; margin: 7px;background-color: white;" 
@@ -566,7 +537,7 @@
                                         <button *ngIf="params['page'] > 1" class="btn btn-primary btn-sm" 
                                             style="width: 60px !important; height: 26px; padding: 0 5px; white-space: nowrap;" 
                                             aria-expanded="true" (click)="prevPage()">
-                                            Önceki
+                                            {{ 'Önceki'.tr() }}
                                         </button>
                                     </td><td style="padding: 0px !important;" *ngIf="data['pages'] < 100">
                                         <select *ngIf="data['pages'] > 1 && data['pages'] < 100"
@@ -590,7 +561,7 @@
                                         <button *ngIf="params['page'] < data['pages'] " class="btn btn-primary btn-sm" 
                                             style="width: 60px !important; height: 26px; padding: 0 5px; white-space: nowrap;" 
                                             aria-expanded="true" (click)="nextPage()">
-                                            Sonraki
+                                            {{ 'Sonraki'.tr() }}
                                         </button>
                                     </td></tr></table>
                                 </td>
@@ -606,7 +577,7 @@
 <div *ngIf="selectedFilter != null" 
     class="modal fade"
     id="detailFilterModal"
-    tabindex="-1" role="dialog"
+    role="dialog"
     aria-labelledby="detailFilterModalLabel" 
     aria-hidden="true">
     
@@ -633,7 +604,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="mapPreviewModal" tabindex="-1" role="dialog" aria-labelledby="mapPreviewModalLabel" aria-hidden="true">
+<div class="modal fade" id="mapPreviewModal" role="dialog" aria-labelledby="mapPreviewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-body" style="padding: 5px !important;">
@@ -673,8 +644,122 @@
                 <button class="btn btn-danger btn-block" 
                     style="position: absolute; margin: -35 20 0 20; width: -webkit-fill-available;"
                     (click)="closeModal(inFormElementId+'inFormModal')"
-                    type="button">İptal
+                    type="button">
+                    {{ 'İptal'.tr() }}
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="columnVisibilityModal" role="dialog" aria-labelledby="columnVisibilityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-body" style="padding: 5px !important;">
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                
+                <h5 style="text-align: center; padding: 10; font-size: 14;font-weight: bold;">
+                    {{ 'Kolon Göster/Gizle'.tr() }}
+                </h5>
+                <button
+                    (click)="showAllColumns()"
+                    class="dropdown-item" >
+
+                    {{ 'Tümünü Göster'.tr() }}
+                </button> 
+                
+                <button
+                    (click)="hideAllColumns()"
+                    class="dropdown-item" >
+
+                    {{ 'Tümünü Gizle'.tr() }}
+                </button>  
+
+                <button
+                    *ngFor="let columnName of data['columnNames']"
+                    (click)="toggleColumnVisibility(columnName)"
+                    class="dropdown-item"
+                    [ngStyle]="{'background-color': params['columnNames'].includes(columnName) ? '#d7fadb' : 'antiquewhite' }" >
+
+                    {{ data['columns'][columnName]['display_name'] }}
+                </button>  
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="groupByModeSettingModal" role="dialog" aria-labelledby="groupByModeSettingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-body" style="padding: 5px !important;">
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                
+                <h5 style="text-align: center; padding: 10; font-size: 12;font-weight: bold;">
+                    {{ 'Kolon Grubu Ayarları'.tr() }}
+                </h5>
+
+                <button
+                    *ngFor="let columnName of data['columnNames']"
+                    (click)="toggleColumnGroupBy(columnName)"
+                    class="dropdown-item"
+                    [ngStyle]="{'background-color': params['groupBy'].includes(columnName) ? '#d7fadb' : 'antiquewhite' }" >
+
+                    {{ data['columns'][columnName]['display_name'] }}
+                </button> 
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="groupByModeModal" 
+    role="dialog" 
+    aria-labelledby="groupByModeModalLabel" 
+    aria-hidden="true">
+    
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-body" style="padding: 5px !important;">
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                <div *ngIf="currentGroupByColumnDataSet">
+                    <h2 style="text-align: center;padding-top: 10;">
+                        {{ currentGroupByColumnDataSet["tableDisplayName"] }} - {{ currentGroupByColumnDataSet["columnDisplayName"] }}
+                    </h2>
+
+                    <div *ngIf="currentGroupByColumnDataSet['records'].length > 20">
+                        <select 
+                            style="width: 100%"
+                            [id]="'groupByDataSelect'+currentGroupByColumnDataSet['columnName']"  >
+                            <option> {{ 'Seçiniz'.tr() }} </option>
+                            <option 
+                                *ngFor="let record of currentGroupByColumnDataSet['records']" 
+                                [value]="record['source']">
+                                    {{ record['display'] }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div *ngIf="currentGroupByColumnDataSet['records'].length <= 20" style="text-align: center">
+                        <button 
+                            *ngFor="let record of currentGroupByColumnDataSet['records']"
+                            (click) = "groupByDataSelected(currentGroupByColumnDataSet['columnName'], currentGroupByColumnDataSet['columnGuiTypeName'], record['source'])"
+                            class = "btn btn-primary group-by-button">
+
+                            {{ record["display"] }}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

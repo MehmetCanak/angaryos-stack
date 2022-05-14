@@ -29,6 +29,7 @@ class CreateUsersTable extends Migration
             $table->jsonb('tokens')->nullable();
             $table->jsonb('auths')->nullable();
             $table->integer('srid')->nullable();
+            $table->integer('language_id')->nullable();
             
             $table->rememberToken();
             

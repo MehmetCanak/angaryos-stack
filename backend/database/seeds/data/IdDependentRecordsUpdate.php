@@ -186,6 +186,15 @@ $update_data =
         'relation_source_column' => NULL,
         'relation_display_column' => NULL
     ],  
+    $language_id_relation['relation_sql'] =>
+    [
+        'relation_table_id' => $tables['languages']->id,
+        'relation_source_column_id' => $columns['id']->id,
+        'relation_display_column_id' => $columns['display_name']->id,
+        'relation_sql' => NULL,
+        'relation_source_column' => NULL,
+        'relation_display_column' => NULL
+    ],  
     $up_column_id_relation['relation_sql'] =>
     [
         'relation_table_id' => $tables['up_columns']->id,

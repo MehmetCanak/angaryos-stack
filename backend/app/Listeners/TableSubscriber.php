@@ -33,6 +33,11 @@ class TableSubscriber
         return $this->getDataForExport($model);
     }
     
+    public function getTableGroupByDataRequested($column, $params)
+    {
+        return $column->getGroupByData($params);
+    }
+    
     public function selectColumnDataRequested($column, $params) 
     {
         return $column->getSelectColumnData($params);
@@ -158,6 +163,11 @@ class TableSubscriber
     public function quickSearch($model, $params, $words)
     {
         return $this->getDataForQuickSearch($model, $params, $words);
+    }
+    
+    public function searchGeoInMultiTables($params)
+    {
+        return $this->getDataForSearchGeoInMultiTables($params);
     }
     
     public function relationDataInfoRequested($record, $column)

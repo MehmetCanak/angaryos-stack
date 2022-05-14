@@ -16,7 +16,7 @@ use Doctrine\DBAL\Schema\MySqlSchemaManager;
 
 class AbstractMySQLDriverTest extends AbstractDriverTest
 {
-    public function testReturnsDatabaseName() : void
+    public function testReturnsDatabaseName(): void
     {
         parent::testReturnsDatabaseName();
 
@@ -30,32 +30,32 @@ class AbstractMySQLDriverTest extends AbstractDriverTest
 
         $statement->expects($this->once())
             ->method('fetchColumn')
-            ->will($this->returnValue($database));
+            ->willReturn($database);
 
         $connection = $this->getConnectionMock();
 
         $connection->expects($this->once())
             ->method('getParams')
-            ->will($this->returnValue($params));
+            ->willReturn($params);
 
         $connection->expects($this->once())
             ->method('query')
-            ->will($this->returnValue($statement));
+            ->willReturn($statement);
 
         self::assertSame($database, $this->driver->getDatabase($connection));
     }
 
-    protected function createDriver() : Driver
+    protected function createDriver(): Driver
     {
         return $this->getMockForAbstractClass(AbstractMySQLDriver::class);
     }
 
-    protected function createPlatform() : AbstractPlatform
+    protected function createPlatform(): AbstractPlatform
     {
         return new MySqlPlatform();
     }
 
-    protected function createSchemaManager(Connection $connection) : AbstractSchemaManager
+    protected function createSchemaManager(Connection $connection): AbstractSchemaManager
     {
         return new MySqlSchemaManager($connection);
     }
@@ -63,7 +63,7 @@ class AbstractMySQLDriverTest extends AbstractDriverTest
     /**
      * {@inheritDoc}
      */
-    protected function getDatabasePlatformsForVersions() : array
+    protected function getDatabasePlatformsForVersions(): array
     {
         return [
             ['5.6.9', MySqlPlatform::class],
@@ -89,80 +89,80 @@ class AbstractMySQLDriverTest extends AbstractDriverTest
     /**
      * {@inheritDoc}
      */
-    protected static function getExceptionConversionData() : array
+    protected static function getExceptionConversionData(): array
     {
         return [
             self::EXCEPTION_CONNECTION => [
-                ['1044', null, null],
-                ['1045', null, null],
-                ['1046', null, null],
-                ['1049', null, null],
-                ['1095', null, null],
-                ['1142', null, null],
-                ['1143', null, null],
-                ['1227', null, null],
-                ['1370', null, null],
-                ['2002', null, null],
-                ['2005', null, null],
+                ['1044', null, ''],
+                ['1045', null, ''],
+                ['1046', null, ''],
+                ['1049', null, ''],
+                ['1095', null, ''],
+                ['1142', null, ''],
+                ['1143', null, ''],
+                ['1227', null, ''],
+                ['1370', null, ''],
+                ['2002', null, ''],
+                ['2005', null, ''],
             ],
             self::EXCEPTION_FOREIGN_KEY_CONSTRAINT_VIOLATION => [
-                ['1216', null, null],
-                ['1217', null, null],
-                ['1451', null, null],
-                ['1452', null, null],
+                ['1216', null, ''],
+                ['1217', null, ''],
+                ['1451', null, ''],
+                ['1452', null, ''],
             ],
             self::EXCEPTION_INVALID_FIELD_NAME => [
-                ['1054', null, null],
-                ['1166', null, null],
-                ['1611', null, null],
+                ['1054', null, ''],
+                ['1166', null, ''],
+                ['1611', null, ''],
             ],
             self::EXCEPTION_NON_UNIQUE_FIELD_NAME => [
-                ['1052', null, null],
-                ['1060', null, null],
-                ['1110', null, null],
+                ['1052', null, ''],
+                ['1060', null, ''],
+                ['1110', null, ''],
             ],
             self::EXCEPTION_NOT_NULL_CONSTRAINT_VIOLATION => [
-                ['1048', null, null],
-                ['1121', null, null],
-                ['1138', null, null],
-                ['1171', null, null],
-                ['1252', null, null],
-                ['1263', null, null],
-                ['1364', null, null],
-                ['1566', null, null],
+                ['1048', null, ''],
+                ['1121', null, ''],
+                ['1138', null, ''],
+                ['1171', null, ''],
+                ['1252', null, ''],
+                ['1263', null, ''],
+                ['1364', null, ''],
+                ['1566', null, ''],
             ],
             self::EXCEPTION_SYNTAX_ERROR => [
-                ['1064', null, null],
-                ['1149', null, null],
-                ['1287', null, null],
-                ['1341', null, null],
-                ['1342', null, null],
-                ['1343', null, null],
-                ['1344', null, null],
-                ['1382', null, null],
-                ['1479', null, null],
-                ['1541', null, null],
-                ['1554', null, null],
-                ['1626', null, null],
+                ['1064', null, ''],
+                ['1149', null, ''],
+                ['1287', null, ''],
+                ['1341', null, ''],
+                ['1342', null, ''],
+                ['1343', null, ''],
+                ['1344', null, ''],
+                ['1382', null, ''],
+                ['1479', null, ''],
+                ['1541', null, ''],
+                ['1554', null, ''],
+                ['1626', null, ''],
             ],
             self::EXCEPTION_TABLE_EXISTS => [
-                ['1050', null, null],
+                ['1050', null, ''],
             ],
             self::EXCEPTION_TABLE_NOT_FOUND => [
-                ['1051', null, null],
-                ['1146', null, null],
+                ['1051', null, ''],
+                ['1146', null, ''],
             ],
             self::EXCEPTION_UNIQUE_CONSTRAINT_VIOLATION => [
-                ['1062', null, null],
-                ['1557', null, null],
-                ['1569', null, null],
-                ['1586', null, null],
+                ['1062', null, ''],
+                ['1557', null, ''],
+                ['1569', null, ''],
+                ['1586', null, ''],
             ],
             self::EXCEPTION_DEADLOCK => [
-                ['1213', null, null],
+                ['1213', null, ''],
             ],
             self::EXCEPTION_LOCK_WAIT_TIMEOUT => [
-                ['1205', null, null],
+                ['1205', null, ''],
             ],
         ];
     }

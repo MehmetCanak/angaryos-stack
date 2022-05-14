@@ -87,7 +87,7 @@ export class SelectElementComponent
 
     elementOperations()
     {      
-        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js', async () => 
+        BaseHelper.getScript('assets/ext_modules/select2/select2.min.js'.tr(), async () => 
         {
             switch(this.type)
             {
@@ -173,17 +173,17 @@ export class SelectElementComponent
                             this.changed.emit(event);
                         })
                         .on('select2:unselect', (event) => this.changed.emit(event));
+                        
+                        setTimeout(() => element.select2('enable', [true]), 500);
                     }
                     catch(err2)
                     {
                         console.log(this.name+' select2 yüklenmemiş tekrar denenecek!')
                         await BaseHelper.sleep(100);
                         this.elementOperations();
+                        return;
                     }
                 }
-                    
-                await BaseHelper.sleep(500);
-                this.aeroThemeHelper.pageRutine();
             },
             error : (e) =>
             {
@@ -255,14 +255,14 @@ export class SelectElementComponent
             })
             .on('select2:unselect', (event) => this.changed.emit(event));
             
-            await BaseHelper.sleep(500);
-            this.aeroThemeHelper.pageRutine();
+            setTimeout(() => $(this.baseElementSelector+' [name="'+this.name+'"]').select2('enable', [true]), 500);
         }
         catch(err2)
         {
             console.log(this.name+' select2. yüklenmemiş tekrar denenecek!')
             await BaseHelper.sleep(100);
             this.elementOperations();
+            return;
         }
     }
 

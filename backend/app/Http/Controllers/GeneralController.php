@@ -16,35 +16,7 @@ class GeneralController extends Controller
     
     public function test($user)
     {
-        //dd(22, DB::select('alter system set checkpoint_completion_target to \'0.9\''));
-        $data = 
-        [
-            'columns' => 
-            [
-                'department_id' => NULL,
-                'surname' => NULL,
-                'column_ids' => NULL,
-                'table_id' => NULL,
-                'data_source_id' => NULL,
-                'display_name' => NULL
-            ],
-            'tables' => 
-            [
-                'users' => NULL,
-                'tables' => NULL,
-                'data_source_tbl_relations' => NULL,
-                'column_arrays' => NULL
-            ],
-        ];
-        
-        foreach($data as $tableName => $items)
-            foreach($items as $key => $val)
-                 $data[$tableName][$key] = get_attr_from_cache($tableName, 'name', $key, 'id');
-        
-        $data['columns']['test'] = get_attr_from_cache('columns', 'name', 'display_name', '*');
-        $data['tables']['test'] = get_attr_from_cache('tables', 'name', 'column_arrays', '*');
-        
-        return $data;
+        dd('test');
     }
     
     public function logs($user)

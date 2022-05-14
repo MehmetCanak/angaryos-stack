@@ -36,6 +36,7 @@ import { MessageHelper } from './pages/helpers/message';
 import { SessionHelper } from './pages/helpers/session';
 import { GeneralHelper } from './pages/helpers/general';
 import { AeroThemeHelper } from './pages/helpers/aero.theme';
+import { LanguageHelper } from './pages/helpers/language';
 
 //import { AngularFireMessagingModule } from '@angular/fire/messaging';
 //import { AngularFireDatabaseModule } from '@angular/fire/database';
@@ -113,4 +114,49 @@ export class AeroModule
     for(var i = 0; i < keys.length; i++)
       customElements.define(keys[i], createCustomElement(this.customElementList[keys[i]], {injector: this.injector}));
   }
+}
+
+declare global 
+{
+    interface String 
+    {
+        format(...args: any[]) : string;
+        tr(...args: any[]) : string;
+        replaceAll(o: string, n: string) : string;
+    }
+}
+
+// Preload
+if (!String.prototype['format']) 
+{
+  String.prototype['format'] = function() 
+  {
+    var args = arguments[0];
+    return this.replace(/{(\d+)}/g, function(match, number) 
+    { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+
+if (!String.prototype['tr']) 
+{
+  String.prototype['tr'] = function() 
+  {
+    var args = arguments;
+    var tr = LanguageHelper.translateWithCache(this);
+    return tr.format(args);
+  };
+}
+
+if (!String.prototype['replaceAll']) 
+{
+  String.prototype['replaceAll'] = function() 
+  {
+    var args = arguments;
+    return this.split(args[0]).join(args[1]);
+  };
 }

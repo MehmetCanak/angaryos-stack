@@ -8,6 +8,8 @@ use \App\BaseModelTraits\BaseModelSqlInjectionTrait;
 use \App\BaseModelTraits\BaseModelGetRelationDataTrait;
 use \App\BaseModelTraits\BaseModelGetDataTrait;
 use \App\BaseModelTraits\BaseModelSelectColumnDataTrait;
+use \App\BaseModelTraits\BaseModelGroupByDataTrait;
+use \App\BaseModelTraits\BaseModelGetDataTranslateTrait;
 
 use \App\Libraries\BaseQueryBuilder;
 
@@ -20,6 +22,8 @@ class BaseModel extends Model
     use BaseModelGetRelationDataTrait;
     use BaseModelGetDataTrait;
     use BaseModelSelectColumnDataTrait;
+    use BaseModelGroupByDataTrait;
+    use BaseModelGetDataTranslateTrait;
     
     
     

@@ -102,13 +102,13 @@ export class SessionHelper
     {
       Swal.fire(
       {
-        title: 'İlk kurulum',
-        text: "Veritabanı daha önce kurulmamış. Şimdi ilk kurulumu yapmak ister misiniz? Dikkat edin! bu işlem tüm veritabanını siler yeniden oluşturur!",
+        title: 'İlk kurulum'.tr(),
+        text: "Veritabanı daha önce kurulmamış. Şimdi ilk kurulumu yapmak ister misiniz? Dikkat edin! bu işlem tüm veritabanını siler yeniden oluşturur!".tr(),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Evet şimdi yapacağım!'
+        confirmButtonText: 'Evet şimdi yapacağım!'.tr()
       })
       .then((result) => 
       {
@@ -119,16 +119,16 @@ export class SessionHelper
           this.doHttpRequest("POST", BaseHelper.backendUrl + "initializeDb")
           .then((data) =>
           {
-            var message = "Tebrikler kurulum başarılı!"
+            var message = "Tebrikler kurulum başarılı!".tr();
               
-            Swal.fire("Başarılı!", message, "success");
+            Swal.fire("Başarılı!".tr(), message, "success");
           })
           .catch((errorMessage) =>
           {
             var message = "Malesef veritabanı başlatılamadı! Tarayıcınızın geliştirici araçlarından ";
-            message += " network geçmişinize bakabilir yada destek sayfamızı ziyaret edebilirsiniz.";
+            message += " network geçmişinize bakabilir yada destek sayfamızı ziyaret edebilirsiniz.".tr();
               
-            Swal.fire("Yapılamadı!", message, "warning");
+            Swal.fire("Yapılamadı!".tr(), message, "warning");
           });
         }
       });
@@ -154,8 +154,8 @@ export class SessionHelper
     {
       var messages = 
       {
-        "mail.or.password.incorrect": "Mail yada şifre hatalı",
-        'no.auth': "Yetkiniz Yok!",
+        "mail.or.password.incorrect": "Mail yada şifre hatalı".tr(),
+        'no.auth': "Yetkiniz Yok!".tr(),
       }
 
       if(typeof messages[message] == "undefined") return message;
@@ -232,7 +232,7 @@ export class SessionHelper
 
         if(!this.disableDoHttpRequestErrorControl)
         {
-          this.messageHelper.sweetAlert("Sunucuyla iletişimde bir hata oldu: " + message, "", 'warning');
+          this.messageHelper.sweetAlert("Sunucuyla iletişimde bir hata oldu: ".tr() + message, "", 'warning');
           reject("***");
           return;
         } 

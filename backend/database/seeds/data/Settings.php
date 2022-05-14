@@ -22,6 +22,9 @@ $settings['DATA_ENTEGRATOR_STATES'] = '{}';
 
 $settings['DEBUG_USER_IDS'] = '[1]';
 
+$settings['DEFAULT_LANGUAGE'] = 'tr';
+$settings['MARK_MISSING_LANGUAGE_DATA'] = '[MISSING_LANG_DATA]';
+
 $settings['ANNOUNCEMENT_CONTROL_TIME'] = '2021-05-23 10:30:00';
 
 

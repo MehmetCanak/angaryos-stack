@@ -2,19 +2,20 @@
 
 namespace Doctrine\Tests\DBAL\Functional;
 
-use Doctrine\DBAL\Driver\PDOOracle\Driver as PDOOracleDriver;
+use Doctrine\DBAL\Driver\PDO\OCI\Driver as PDOOCIDriver;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\FetchMode;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Tests\DbalFunctionalTestCase;
+
 use function base64_decode;
 use function stream_get_contents;
 
 class StatementTest extends DbalFunctionalTestCase
 {
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -24,9 +25,9 @@ class StatementTest extends DbalFunctionalTestCase
         $this->connection->getSchemaManager()->dropAndCreateTable($table);
     }
 
-    public function testStatementIsReusableAfterClosingCursor() : void
+    public function testStatementIsReusableAfterClosingCursor(): void
     {
-        if ($this->connection->getDriver() instanceof PDOOracleDriver) {
+        if ($this->connection->getDriver() instanceof PDOOCIDriver) {
             $this->markTestIncomplete('See https://bugs.php.net/bug.php?id=77181');
         }
 
@@ -49,9 +50,9 @@ class StatementTest extends DbalFunctionalTestCase
         self::assertEquals(2, $id);
     }
 
-    public function testReuseStatementWithLongerResults() : void
+    public function testReuseStatementWithLongerResults(): void
     {
-        if ($this->connection->getDriver() instanceof PDOOracleDriver) {
+        if ($this->connection->getDriver() instanceof PDOOCIDriver) {
             $this->markTestIncomplete('PDO_OCI doesn\'t support fetching blobs via PDOStatement::fetchAll()');
         }
 
@@ -86,9 +87,9 @@ class StatementTest extends DbalFunctionalTestCase
         ], $stmt->fetchAll(FetchMode::NUMERIC));
     }
 
-    public function testFetchLongBlob() : void
+    public function testFetchLongBlob(): void
     {
-        if ($this->connection->getDriver() instanceof PDOOracleDriver) {
+        if ($this->connection->getDriver() instanceof PDOOCIDriver) {
             // inserting BLOBs as streams on Oracle requires Oracle-specific SQL syntax which is currently not supported
             // see http://php.net/manual/en/pdo.lobs.php#example-1035
             $this->markTestSkipped('DBAL doesn\'t support storing LOBs represented as streams using PDO_OCI');
@@ -134,7 +135,7 @@ EOF
         self::assertSame($contents, stream_get_contents($stream));
     }
 
-    public function testIncompletelyFetchedStatementDoesNotBlockConnection() : void
+    public function testIncompletelyFetchedStatementDoesNotBlockConnection(): void
     {
         $this->connection->insert('stmt_test', ['id' => 1]);
         $this->connection->insert('stmt_test', ['id' => 2]);
@@ -151,9 +152,9 @@ EOF
         self::assertEquals(1, $stmt2->fetchColumn());
     }
 
-    public function testReuseStatementAfterClosingCursor() : void
+    public function testReuseStatementAfterClosingCursor(): void
     {
-        if ($this->connection->getDriver() instanceof PDOOracleDriver) {
+        if ($this->connection->getDriver() instanceof PDOOCIDriver) {
             $this->markTestIncomplete('See https://bugs.php.net/bug.php?id=77181');
         }
 
@@ -173,7 +174,7 @@ EOF
         self::assertEquals(2, $id);
     }
 
-    public function testReuseStatementWithParameterBoundByReference() : void
+    public function testReuseStatementWithParameterBoundByReference(): void
     {
         $this->connection->insert('stmt_test', ['id' => 1]);
         $this->connection->insert('stmt_test', ['id' => 2]);
@@ -190,7 +191,7 @@ EOF
         self::assertEquals(2, $stmt->fetchColumn());
     }
 
-    public function testReuseStatementWithReboundValue() : void
+    public function testReuseStatementWithReboundValue(): void
     {
         $this->connection->insert('stmt_test', ['id' => 1]);
         $this->connection->insert('stmt_test', ['id' => 2]);
@@ -206,7 +207,7 @@ EOF
         self::assertEquals(2, $stmt->fetchColumn());
     }
 
-    public function testReuseStatementWithReboundParam() : void
+    public function testReuseStatementWithReboundParam(): void
     {
         $this->connection->insert('stmt_test', ['id' => 1]);
         $this->connection->insert('stmt_test', ['id' => 2]);
@@ -229,23 +230,20 @@ EOF
      *
      * @dataProvider emptyFetchProvider
      */
-    public function testFetchFromNonExecutedStatement(callable $fetch, $expected) : void
+    public function testFetchFromNonExecutedStatement(callable $fetch, $expected): void
     {
         $stmt = $this->connection->prepare('SELECT id FROM stmt_test');
 
         self::assertSame($expected, $fetch($stmt));
     }
 
-    public function testCloseCursorOnNonExecutedStatement() : void
+    public function testCloseCursorOnNonExecutedStatement(): void
     {
         $stmt = $this->connection->prepare('SELECT id FROM stmt_test');
         self::assertTrue($stmt->closeCursor());
     }
 
-    /**
-     * @group DBAL-2637
-     */
-    public function testCloseCursorAfterCursorEnd() : void
+    public function testCloseCursorAfterCursorEnd(): void
     {
         $stmt = $this->connection->prepare('SELECT name FROM stmt_test');
 
@@ -260,7 +258,7 @@ EOF
      *
      * @dataProvider emptyFetchProvider
      */
-    public function testFetchFromNonExecutedStatementWithClosedCursor(callable $fetch, $expected) : void
+    public function testFetchFromNonExecutedStatementWithClosedCursor(callable $fetch, $expected): void
     {
         $stmt = $this->connection->prepare('SELECT id FROM stmt_test');
         $stmt->closeCursor();
@@ -273,7 +271,7 @@ EOF
      *
      * @dataProvider emptyFetchProvider
      */
-    public function testFetchFromExecutedStatementWithClosedCursor(callable $fetch, $expected) : void
+    public function testFetchFromExecutedStatementWithClosedCursor(callable $fetch, $expected): void
     {
         $this->connection->insert('stmt_test', ['id' => 1]);
 
@@ -287,23 +285,32 @@ EOF
     /**
      * @return mixed[][]
      */
-    public static function emptyFetchProvider() : iterable
+    public static function emptyFetchProvider(): iterable
     {
         return [
             'fetch' => [
+                /**
+                 * @return mixed
+                 */
                 static function (Statement $stmt) {
                     return $stmt->fetch();
                 },
                 false,
             ],
+            /**
+             * @return mixed|false
+             */
             'fetch-column' => [
                 static function (Statement $stmt) {
                     return $stmt->fetchColumn();
                 },
                 false,
             ],
+            /**
+             * @return mixed[]
+             */
             'fetch-all' => [
-                static function (Statement $stmt) {
+                static function (Statement $stmt): array {
                     return $stmt->fetchAll();
                 },
                 [],
@@ -311,12 +318,50 @@ EOF
         ];
     }
 
-    public function testFetchInColumnMode() : void
+    public function testFetchInColumnMode(): void
     {
         $platform = $this->connection->getDatabasePlatform();
         $query    = $platform->getDummySelectSQL();
         $result   = $this->connection->executeQuery($query)->fetch(FetchMode::COLUMN);
 
         self::assertEquals(1, $result);
+    }
+
+    public function testExecuteQuery(): void
+    {
+        $platform = $this->connection->getDatabasePlatform();
+        $query    = $platform->getDummySelectSQL();
+        $result   = $this->connection->prepare($query)->executeQuery()->fetchOne();
+
+        self::assertEquals(1, $result);
+    }
+
+    public function testExecuteQueryWithParams(): void
+    {
+        $this->connection->insert('stmt_test', ['id' => 1]);
+
+        $query  = 'SELECT id FROM stmt_test WHERE id = ?';
+        $result = $this->connection->prepare($query)->executeQuery([1])->fetchOne();
+
+        self::assertEquals(1, $result);
+    }
+
+    public function testExecuteStatement(): void
+    {
+        $this->connection->insert('stmt_test', ['id' => 1]);
+
+        $query = 'UPDATE stmt_test SET name = ? WHERE id = 1';
+        $stmt  = $this->connection->prepare($query);
+
+        $stmt->bindValue(1, 'bar');
+
+        $result = $stmt->executeStatement();
+
+        $this->assertEquals(1, $result);
+
+        $query  = 'UPDATE stmt_test SET name = ? WHERE id = ?';
+        $result = $this->connection->prepare($query)->executeStatement(['foo', 1]);
+
+        $this->assertEquals(1, $result);
     }
 }

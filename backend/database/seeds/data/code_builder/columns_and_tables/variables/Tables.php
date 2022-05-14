@@ -87,4 +87,6 @@ $table_name_display_name_map =
     'devices' => 'Cihazlar',
     'announcements' => 'Duyurular',
     'feedbacks' => 'Geri Bildirimler',
+    
+    'languages' => 'Diller',
 ];

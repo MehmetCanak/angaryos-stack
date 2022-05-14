@@ -3,11 +3,12 @@
 namespace Doctrine\Tests\DBAL\Functional;
 
 use DateTime;
-use Doctrine\DBAL\Driver\PDOOracle\Driver as PDOOracleDriver;
+use Doctrine\DBAL\Driver\PDO\OCI\Driver as PDOOCIDriver;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Tests\DbalFunctionalTestCase;
 use stdClass;
+
 use function str_repeat;
 
 class TypeConversionTest extends DbalFunctionalTestCase
@@ -15,7 +16,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /** @var int */
     private static $typeCounter = 0;
 
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -47,7 +48,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
      *
      * @dataProvider booleanProvider
      */
-    public function testIdempotentConversionToBoolean(string $type, $originalValue) : void
+    public function testIdempotentConversionToBoolean(string $type, $originalValue): void
     {
         $dbValue = $this->processValue($type, $originalValue);
 
@@ -58,7 +59,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function booleanProvider() : iterable
+    public static function booleanProvider(): iterable
     {
         return [
             'true' => ['boolean', true],
@@ -71,7 +72,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
      *
      * @dataProvider integerProvider
      */
-    public function testIdempotentConversionToInteger(string $type, $originalValue) : void
+    public function testIdempotentConversionToInteger(string $type, $originalValue): void
     {
         $dbValue = $this->processValue($type, $originalValue);
 
@@ -82,7 +83,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function integerProvider() : iterable
+    public static function integerProvider(): iterable
     {
         return [
             'smallint' => ['smallint', 123],
@@ -94,7 +95,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
      *
      * @dataProvider floatProvider
      */
-    public function testIdempotentConversionToFloat(string $type, $originalValue) : void
+    public function testIdempotentConversionToFloat(string $type, $originalValue): void
     {
         $dbValue = $this->processValue($type, $originalValue);
 
@@ -105,7 +106,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function floatProvider() : iterable
+    public static function floatProvider(): iterable
     {
         return [
             'float' => ['float', 1.5],
@@ -117,9 +118,9 @@ class TypeConversionTest extends DbalFunctionalTestCase
      *
      * @dataProvider toStringProvider
      */
-    public function testIdempotentConversionToString(string $type, $originalValue) : void
+    public function testIdempotentConversionToString(string $type, $originalValue): void
     {
-        if ($type === 'text' && $this->connection->getDriver() instanceof PDOOracleDriver) {
+        if ($type === 'text' && $this->connection->getDriver() instanceof PDOOCIDriver) {
             // inserting BLOBs as streams on Oracle requires Oracle-specific SQL syntax which is currently not supported
             // see http://php.net/manual/en/pdo.lobs.php#example-1035
             $this->markTestSkipped('DBAL doesn\'t support storing LOBs represented as streams using PDO_OCI');
@@ -134,13 +135,11 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function toStringProvider() : iterable
+    public static function toStringProvider(): iterable
     {
         return [
             'string' => ['string', 'ABCDEFGabcdefg'],
-            'bigint' => ['bigint', 12345678],
             'text' => ['text', str_repeat('foo ', 1000)],
-            'decimal' => ['decimal', 1.55],
         ];
     }
 
@@ -149,7 +148,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
      *
      * @dataProvider toArrayProvider
      */
-    public function testIdempotentConversionToArray(string $type, $originalValue) : void
+    public function testIdempotentConversionToArray(string $type, $originalValue): void
     {
         $dbValue = $this->processValue($type, $originalValue);
 
@@ -160,7 +159,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function toArrayProvider() : iterable
+    public static function toArrayProvider(): iterable
     {
         return [
             'array' => ['array', ['foo' => 'bar']],
@@ -173,7 +172,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
      *
      * @dataProvider toObjectProvider
      */
-    public function testIdempotentConversionToObject(string $type, $originalValue) : void
+    public function testIdempotentConversionToObject(string $type, $originalValue): void
     {
         $dbValue = $this->processValue($type, $originalValue);
 
@@ -184,7 +183,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function toObjectProvider() : iterable
+    public static function toObjectProvider(): iterable
     {
         $obj      = new stdClass();
         $obj->foo = 'bar';
@@ -198,7 +197,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @dataProvider toDateTimeProvider
      */
-    public function testIdempotentConversionToDateTime(string $type, DateTime $originalValue) : void
+    public function testIdempotentConversionToDateTime(string $type, DateTime $originalValue): void
     {
         $dbValue = $this->processValue($type, $originalValue);
 
@@ -218,7 +217,7 @@ class TypeConversionTest extends DbalFunctionalTestCase
     /**
      * @return mixed[][]
      */
-    public static function toDateTimeProvider() : iterable
+    public static function toDateTimeProvider(): iterable
     {
         return [
             'datetime' => ['datetime', new DateTime('2010-04-05 10:10:10')],
@@ -237,7 +236,10 @@ class TypeConversionTest extends DbalFunctionalTestCase
     {
         $columnName     = 'test_' . $type;
         $typeInstance   = Type::getType($type);
-        $insertionValue = $typeInstance->convertToDatabaseValue($originalValue, $this->connection->getDatabasePlatform());
+        $insertionValue = $typeInstance->convertToDatabaseValue(
+            $originalValue,
+            $this->connection->getDatabasePlatform()
+        );
 
         $this->connection->insert('type_conversion', ['id' => ++self::$typeCounter, $columnName => $insertionValue]);
 

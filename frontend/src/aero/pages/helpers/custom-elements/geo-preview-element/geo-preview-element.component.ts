@@ -26,12 +26,12 @@ export class GeoPreviewElementComponent
     {
         var displayNames = 
         {
-            'point': "Nokta",
-            'multipoint': "Nokta(lar)",
-            'linestring': "Çizgi",
-            'multilinestring': "Çizgi(ler)",
-            'polygon': "Alan",
-            'multipolygon': "Alan(lar)",
+            'point': "Nokta".tr(),
+            'multipoint': "Nokta(lar)".tr(),
+            'linestring': "Çizgi".tr(),
+            'multilinestring': "Çizgi(ler)".tr(),
+            'polygon': "Alan".tr(),
+            'multipolygon': "Alan(lar)".tr(),
         };
 
         return displayNames[type];

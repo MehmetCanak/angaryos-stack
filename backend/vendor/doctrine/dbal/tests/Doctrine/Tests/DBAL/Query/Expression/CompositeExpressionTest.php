@@ -3,27 +3,33 @@
 namespace Doctrine\Tests\DBAL\Query\Expression;
 
 use Doctrine\DBAL\Query\Expression\CompositeExpression;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\Tests\DbalTestCase;
 
-/**
- * @group DBAL-12
- */
 class CompositeExpressionTest extends DbalTestCase
 {
-    public function testCount() : void
+    use VerifyDeprecations;
+
+    public function testCount(): void
     {
-        $expr = new CompositeExpression(CompositeExpression::TYPE_OR, ['u.group_id = 1']);
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/issues/3844');
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/3864');
+
+        $expr = CompositeExpression::or('u.group_id = 1');
 
         self::assertCount(1, $expr);
 
-        $expr->add('u.group_id = 2');
+        $expr = $expr->with('u.group_id = 2');
 
         self::assertCount(2, $expr);
     }
 
-    public function testAdd() : void
+    public function testAdd(): void
     {
-        $expr = new CompositeExpression(CompositeExpression::TYPE_OR, ['u.group_id = 1']);
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/3864');
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/dbal/issues/3844');
+
+        $expr = CompositeExpression::or('u.group_id = 1');
 
         self::assertCount(1, $expr);
 
@@ -31,7 +37,7 @@ class CompositeExpressionTest extends DbalTestCase
 
         self::assertCount(1, $expr);
 
-        $expr->add(new CompositeExpression(CompositeExpression::TYPE_OR, ['u.user_id = 1']));
+        $expr->add(CompositeExpression::or('u.user_id = 1'));
 
         self::assertCount(2, $expr);
 
@@ -44,13 +50,35 @@ class CompositeExpressionTest extends DbalTestCase
         self::assertCount(3, $expr);
     }
 
+    public function testWith(): void
+    {
+        $expr = CompositeExpression::or('u.group_id = 1');
+
+        self::assertCount(1, $expr);
+
+        // test immutability
+        $expr->with(CompositeExpression::or('u.user_id = 1'));
+
+        self::assertCount(1, $expr);
+
+        $expr = $expr->with(CompositeExpression::or('u.user_id = 1'));
+
+        self::assertCount(2, $expr);
+
+        $expr = $expr->with('u.user_id = 1');
+
+        self::assertCount(3, $expr);
+    }
+
     /**
      * @param string[]|CompositeExpression[] $parts
      *
      * @dataProvider provideDataForConvertToString
      */
-    public function testCompositeUsageAndGeneration(string $type, array $parts, string $expects) : void
+    public function testCompositeUsageAndGeneration(string $type, array $parts, string $expects): void
     {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/3864');
+
         $expr = new CompositeExpression($type, $parts);
 
         self::assertEquals($expects, (string) $expr);
@@ -59,7 +87,7 @@ class CompositeExpressionTest extends DbalTestCase
     /**
      * @return mixed[][]
      */
-    public static function provideDataForConvertToString() : iterable
+    public static function provideDataForConvertToString(): iterable
     {
         return [
             [
@@ -86,9 +114,9 @@ class CompositeExpressionTest extends DbalTestCase
                 CompositeExpression::TYPE_AND,
                 [
                     'u.user = 1',
-                    new CompositeExpression(
-                        CompositeExpression::TYPE_OR,
-                        ['u.group_id = 1', 'u.group_id = 2']
+                    CompositeExpression::or(
+                        'u.group_id = 1',
+                        'u.group_id = 2'
                     ),
                 ],
                 '(u.user = 1) AND ((u.group_id = 1) OR (u.group_id = 2))',
@@ -97,9 +125,9 @@ class CompositeExpressionTest extends DbalTestCase
                 CompositeExpression::TYPE_OR,
                 [
                     'u.group_id = 1',
-                    new CompositeExpression(
-                        CompositeExpression::TYPE_AND,
-                        ['u.user = 1', 'u.group_id = 2']
+                    CompositeExpression::and(
+                        'u.user = 1',
+                        'u.group_id = 2'
                     ),
                 ],
                 '(u.group_id = 1) OR ((u.user = 1) AND (u.group_id = 2))',

@@ -9,6 +9,9 @@ Route::bind('token', function ($token)
     if($user == NULL) abort(helper('response_error', 'fail.token'));
 
     Auth::login($user);
+    
+    $lang = get_attr_from_cache('languages', 'id', $user->language_id, 'name');
+    if($lang) App::setLocale('en');
 
     return $user;
 });
@@ -60,7 +63,10 @@ Route::bind('archive_id', function ($id)
     
     global $pipe;
     
-    $model = new BaseModel($pipe['table']);
+    $tableName = $pipe['table'];
+    if(!strstr($tableName, '_archive')) $tableName .= '_archive';
+
+    $model = new BaseModel($tableName);
     $model = $model->find($id);
     
     if($model == NULL) abort(helper('response_error', 'fail.archive_id'));

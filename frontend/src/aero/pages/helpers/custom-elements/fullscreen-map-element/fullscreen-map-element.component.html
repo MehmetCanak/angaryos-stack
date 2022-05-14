@@ -1,18 +1,12 @@
 <div style="width: 100%; min-height: 100%;"  id="fullScreenMap"></div>
 
 
-
 <button (click)="zoomIn()" class="btn btn-sm btn-primary btn-icon" type="button" id="zoom-in-button">
     <span style="font-size: 12px;" class="ti ti-plus" ></span>
 </button>
 <button (click)="zoomOut()" class="btn btn-sm btn-primary btn-icon" type="button" id="zoom-out-button">
     <span style="font-size: 12px;" class="ti ti-minus" ></span>
 </button>
-
-<div id="loading" *ngIf="loading">
-    <span><b>Yükleniyor...</b></span>
-</div>
-
 
 
 <div id="tools-bar" [hidden]="!toolsBarVisible">
@@ -31,7 +25,7 @@
                         id="drawButton"  
                         ngbDropdownToggle> 
 
-                        Ekle
+                        {{ 'Ekle'.tr() }}
                     </button>
 
                     <div ngbDropdownMenu>
@@ -40,42 +34,42 @@
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Nokta
+                            {{ 'Nokta'.tr() }}
                         </a>    
                         <a 
                             (click)="drawStart('Point', true)"
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Noktalar
+                            {{ 'Noktalar'.tr() }}
                         </a>  
                         <a 
                             (click)="drawStart('LineString')"
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Çizgi
+                            {{ 'Çizgi'.tr() }}
                         </a>    
                         <a 
                             (click)="drawStart('LineString', true)"
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Çizgiler
+                            {{ 'Çizgiler'.tr() }}
                         </a>  
                         <a 
                             (click)="drawStart('Polygon')"
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Alan
+                            {{ 'Alan'.tr() }}
                         </a>    
                         <a 
                             (click)="drawStart('Polygon', true)"
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Alanlar
+                            {{ 'Alanlar'.tr() }}
                         </a>     
                     </div>
                 </div>
@@ -83,7 +77,7 @@
                 <button [hidden]="drawingInteraction == null" class="btn btn-sm btn-primary" 
                     type="button" (click)="drawEnd()" id="drawEndButtom" >
         
-                    Çizimi Bitir
+                    {{ 'Çizimi Bitir'.tr() }}
                 </button>
             </td>
             <td width="5000px">
@@ -91,12 +85,12 @@
             </td>
             <td *ngIf="netcadAuthControl() && !isMobileDevice()" width="5px">
                 <button (click)="addNetcadFeatures()" class="btn btn-sm btn-primary" type="button">
-                    Netcad 'den Yükle  
+                    {{ 'Netcad \'den Yükle'.tr() }}  
                 </button>
             </td>
             <td *ngIf="kmzAuthControl() && !isMobileDevice()" width="5px">
                 <button (click)="selectKmzFile()" class="btn btn-sm btn-primary" type="button">
-                    KMZ Yükle   
+                    {{ 'KMZ Yükle'.tr() }}   
                 </button>
             </td>
             <td>
@@ -116,7 +110,7 @@
     <table class="light-table">
         <tr>
             <td>
-                <h6 style="padding: 0; margin: 5 0 5 10;">Nesneler</h6>
+                <h6 style="padding: 0; margin: 5 0 5 10;">{{ 'Nesneler'.tr() }} </h6>
             </td>
             <td width="65px" align="right">
                 <div                                                  
@@ -128,7 +122,7 @@
                         id="drawButton"  
                         ngbDropdownToggle> 
 
-                        Dönüştür
+                        {{ 'Dönüştür'.tr() }}
                     </button>
 
                     <div ngbDropdownMenu>
@@ -137,14 +131,14 @@
                             class="dropdown-item"
                             ngbDropdownItem>
                             
-                            Noktaya Dönüştür
+                            {{ 'Noktaya Dönüştür'.tr() }}
                         </a>   
                     </div>
                 </div>
             </td>
             <td width="65px" align="right">
                 <button (click)="dataTransport()" [class]="'btn btn-sm btn-primary ' + (isUpTableRecordSelected() ? '' : ' disabled')" type="button">
-                    Data Aktar  
+                    {{ 'Data Aktar'.tr() }}  
                 </button>
             </td>
             <td width="5px" align="right">
@@ -261,7 +255,7 @@
                                     (click)="toggleFeatureSelected(className, subClassName, typeName, i)"
                                     [class]="'feature-item ' + (feature['selected'] ? 'feature-item-selected' : '') ">
 
-                                    {{ feature['selected'] ? 'Seçilmiş' : 'Seçilmemiş' }}
+                                    {{ (feature['selected'] ? 'Seçilmiş' : 'Seçilmemiş').tr() }}
                                 </div>
                             </div>
                         </div>
@@ -293,7 +287,7 @@
             class="dropdown-item"
             ngbDropdownItem>
             
-            Panel
+            {{ 'Panel'.tr() }}
         </a>    
         <div class="dropdown-divider"></div>
         <a 
@@ -301,7 +295,7 @@
             class="dropdown-item"
             ngbDropdownItem>
             
-            Arama Yap <span class="shortcut">Alt+A</span>
+            {{ 'Arama Yap'.tr() }} <span class="shortcut">Alt+A</span>
         </a>  
         <div class="dropdown-divider"></div>
         <a 
@@ -309,14 +303,14 @@
             class="dropdown-item"
             ngbDropdownItem>
             
-            Katmanlar <span class="shortcut">Alt+K</span>
+            {{ 'Katmanlar'.tr() }} <span class="shortcut">Alt+K</span>
         </a>    
         <a 
             (click)="setToolsBarVisible(true)" 
             class="dropdown-item"
             ngbDropdownItem>
             
-            Araç Çubuğu <span class="shortcut">Alt+C</span>
+            {{ 'Araç Çubuğu'.tr() }} <span class="shortcut">Alt+C</span>
         </a>  
         <a 
             [hidden]="isVectorFeaturesTreeNull()"
@@ -324,7 +318,7 @@
             class="dropdown-item"
             ngbDropdownItem>
             
-            Nesne Ağacı <span class="shortcut">Alt+N</span>
+            {{ 'Nesne Ağacı'.tr() }}<span class="shortcut">Alt+N</span>
         </a> 
     </div>
 </div>
@@ -347,10 +341,32 @@
                     type="text" 
                     name="filter" 
                     id="filter" 
-                    (change)="layerFilterChanged()"
+                    (input)="layerFilterChanged()"
                     [(ngModel)]="layerFilterString"
                     style="background-color: white; max-width: 350px;margin: auto;margin-bottom: 15px"
-                    placeholder="Arama">
+                    placeholder="{{ 'Arama'.tr() }}">
+                    
+                <table width="100%">
+                    <tr>
+                        <td style="text-align:center">
+                            <button 
+                                style="cursor:pointer; margin-right: 3;"
+                                (click)="showAllLayers()"
+                                class="btn btn-primary">
+
+                                <i style="font-size: 14px;" class="zmdi zmdi-layers"></i>
+                            </button>
+                            
+                            <button 
+                                style="cursor:pointer; margin-right: 3px;"
+                                (click)="hideAllLayers()"
+                                class="btn btn-primary">
+
+                                <i style="font-size: 14px;" class="zmdi zmdi-layers-off"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </table>
                 
                 <div cdkDropListGroup>
                     <div class="dragdrop-container">
@@ -367,10 +383,20 @@
                                 cdkDrag>
                                 <table width="100%">
                                     <tr>
-                                        <td>{{ layer['display_name'] }}</td>
+                                        <td style="max-width: 180px;">{{ layer['display_name'] }}</td>
                                         <td width="20">
                                             <span 
-                                                style="cursor:pointer"
+                                                *ngIf="layer['layerTableType'] != 'external'"
+                                                style="cursor:pointer;"
+                                                (click)="showFilterModal(layer)"
+                                                class="badge badge-sm badge-warning">
+
+                                                <i style="font-size: 10px;" class="zmdi zmdi-tune"></i>
+                                            </span>
+                                        </td>
+                                        <td width="20">
+                                            <span 
+                                                style="cursor:pointer;"
                                                 (click)="showLegend(layer)"
                                                 class="badge badge-sm badge-warning">
 
@@ -379,7 +405,7 @@
                                         </td>
                                         <td width="20">
                                             <span 
-                                                style="cursor:pointer"
+                                                style="cursor:pointer;"
                                                 (click)="changeLayerVisibility(layer)"
                                                 [class]="'badge badge-sm badge-' + (layer.getVisible() ? 'warning' : 'default' )">
 
@@ -423,10 +449,10 @@
                     inFormRecordId="{{ inFormRecordId }}">
                 
                 </in-form-element>
-                <button class="btn btn-danger btn-block" 
-                    style="position: absolute; margin: -35 20 0 20; width: -webkit-fill-available;"
-                    (click)="closeModal(inFormElementId+'inFormModal')"
-                    type="button">İptal
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
                 </button>
             </div>
         </div>
@@ -434,18 +460,27 @@
 </div>
     
 <div class="modal fade" id="featureListTableModal" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content">
-            <div class="modal-body">
-                <h3>Tıkladığınız noktadaki nesneler</h3>
+            <div class="modal-body" style="display: block; overflow: auto;">
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                
+                <h2>
+                    {{ "Arama Sonuçları".tr() }} 
+                    <i *ngIf="searching" class="zmdi zmdi-settings zmdi-hc-spin"></i>
+                </h2>
                 
                 <table class="table table-bordered table-striped table-hover" role="grid" >
                     <thead>
                         <tr>
                             <th></th>
-                            <th>Tablo</th>
-                            <th>Kayıt ID</th>
-                            <th>Özet</th>
+                            <th>{{ 'Tablo'.tr() }}</th>
+                            <th>{{ 'Kayıt ID'.tr() }}</th>
+                            <th>{{ 'Özet'.tr() }}</th>
                         </tr>
                     </thead>
                     <tbody *ngFor="let tableName of getKeys(featureList)">
@@ -462,7 +497,7 @@
                                 <a 
                                     class="btn btn-sm btn-primary"
                                     data-toggle="tooltip" title="Odaklan" 
-                                    (click)="zoomToFeature(featureList[tableName]['records'][recId]['feature'])">
+                                    (click)="zoomToFeature(featureList[tableName]['records'][recId]['_feature'])">
                                     
                                     <i class="zmdi zmdi-center-focus-weak"></i>
                                 </a>
@@ -471,45 +506,51 @@
                             <td>{{ recId }}</td>
                             <td style="font-size: 10px">
                                 <span
-                                *ngFor="let columnName of getKeys(featureList[tableName]['records'][recId]['data'])"
-                                [hidden]="columnName.substr(0, 1) == '_' || getSummary(featureList[tableName]['records'][recId]['data'][columnName]) == null">
+                                *ngFor="let columnName of getKeys(featureList[tableName]['records'][recId]['_summaries'])" >
                                     
                                     <span style="padding: 2px; margin: 2px 5px 2px 2px;"
                                         class="badge badge-primary">
 
                                         <b>
-                                            {{ getColumnDisplayName(tableName, columnName) }} :
+                                            {{ featureList[tableName]['records'][recId]["_summaries"][columnName]["displayName"] }} :
                                         </b>
                                         &nbsp;
-                                        {{ getSummary(featureList[tableName]['records'][recId]['data'][columnName]) }} 
+                                        {{ featureList[tableName]['records'][recId]["_summaries"][columnName]["data"] }} 
                                     </span>
-                                    
                                     
                                 </span>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+                <br>
+                {{ '**Yalnızca açık olan katmanlar içinde yapılan arama sonuçlarıdır'.tr() }}
             </div>
         </div>
     </div>
 </div>
     
 <div 
-    *ngIf="lastSelectedFeatureType('external')" 
+    *ngIf="lastSelectedFeatureData && lastSelectedFeatureData['_type'] == 'external'" 
     class="modal fade" id="externalFeatureInfoModal" 
     role="dialog" aria-hidden="true">
     
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-body">
-                <h3>Detay Bilgiler</h3>
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                
+                <h3>{{ 'Detay Bilgiler'.tr() }}</h3>
                 
                 <table class="table table-bordered table-striped table-hover" role="grid" >
                     <tbody>
-                        <tr *ngFor="let columnName of getKeys(lastSelectedFeatureData['data'])">
-                            <th>{{ columnName }}</th>
-                            <td>{{ lastSelectedFeatureData['data'][columnName] }}</td>
+                        <tr *ngFor="let columnName of getKeys(lastSelectedFeatureData['_summaries'])">
+                            <th>{{ lastSelectedFeatureData['_summaries'][columnName]['displayName']  }}</th>
+                            <td>{{ lastSelectedFeatureData['_summaries'][columnName]['data'] }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -519,22 +560,72 @@
 </div>
     
 <div 
-    *ngIf="lastSelectedFeatureType('default')" 
+    *ngIf="lastSelectedFeatureData && lastSelectedFeatureData['_type'] == 'default'" 
     class="modal fade" id="defaultFeatureInfoModal" 
     role="dialog" aria-hidden="true">
     
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-body" style="padding: 0">
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                
                 <in-show-element
-                    id="{{ lastSelectedFeatureData['data']['id'] }}"
-                    inShowTableName="{{ lastSelectedFeatureData['tableName'] }}" >
+                    id="{{ lastSelectedFeatureData['id'] }}"
+                    inShowTableName="{{ lastSelectedFeatureData['_tableName'] }}" >
                 </in-show-element>
             </div>
         </div>
     </div>
 </div>
     
-<div [hidden]="!showLegendPanel" class="legendPanel">
+<div 
+    class="modal fade" id="layerFilterModal" 
+    role="dialog" aria-hidden="true">    
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">        
+        <div class="modal-content">
+            <div class="modal-body" style="padding: 15" *ngIf="currentLayerForFilter" >
+                <button id="close" data-dismiss="modal"
+                    class="btn btn-primary btn-sm btn-icon" type="button">
+
+                    <i class="zmdi zmdi-close"></i>
+                </button>
+                
+                <button (click)="showDetailFilterElements()" class="btn btn-primary btn-sm btn-icon" type="button" style="position: absolute">
+                    <i class="zmdi zmdi-filter-list"></i>
+                </button>
+                
+                <table style="width:100%"><tr><td style="text-align: center">   
+                    <h3>{{ currentLayerForFilter['authData']['display_name'] }} {{ "Filtrele".tr() }}</h3>  
+                </td></tr></table>
+                
+                <div class="form-group"
+                     *ngFor="let columnName of getKeys(tableColumns[currentLayerForFilter['authData']['orj_name']])">
+                        
+                    <div  *ngIf="tableColumns[currentLayerForFilter['authData']['orj_name']][columnName]['filterGuiTypeName'] != 'disable'">
+                        
+                        {{ tableColumns[currentLayerForFilter['authData']['orj_name']][columnName]['display_name'] }}
+
+                        <!-- (changed)="detailFilterChanged($event)" -->
+                        <detail-filter-element 
+                           [showButtons] = "false"
+                           [displayName]="tableColumns[currentLayerForFilter['authData']['orj_name']][columnName]['display_name']"                                                                
+                           [filterJson]="tableColumns[currentLayerForFilter['authData']['orj_name']][columnName]['filterJson']"
+                           
+                           (formElementChanged)="detailFilterFormElementChanged($event)"
+                           [baseUrl]="tableColumns[currentLayerForFilter['authData']['orj_name']][columnName]['baseUrl']" >
+                       </detail-filter-element>
+                    </div>
+                </div>
+                <button (click)="doFilter()" class="btn btn-block btn-lg btn-primary">{{ "Filtrele".tr() }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+<div [hidden]="!showLegendPanel" class="legendPanel" (contextmenu)="hideLegend()">
     <img src="{{ legendUrl }}">
 </div>

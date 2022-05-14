@@ -143,7 +143,7 @@ export class MobileContactComponent
                     var colName = keys[i];
                     var err = data['errors'][colName].join(', ');
                     
-                    this.messageHelper.sweetAlert("Formda hata var! <br><br> "+colDisplayNames[colName]+": "+err, "Hata", "warning");
+                    this.messageHelper.sweetAlert("Formda hata var!".tr()+" <br><br> "+colDisplayNames[colName]+": "+err, "Hata", "warning");
                     break;
                 }
             }

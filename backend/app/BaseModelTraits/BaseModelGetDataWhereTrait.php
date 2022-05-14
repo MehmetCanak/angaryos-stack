@@ -59,6 +59,7 @@ trait BaseModelGetDataWhereTrait
             {
                 case 'string':
                 case 'text':
+                case 'json':
                 case 'jsonb':
                     return $this->addWhereForString($params);
                 case 'integer': 

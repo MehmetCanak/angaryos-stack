@@ -65,6 +65,7 @@ trait BaseModelGetDataJoinTrait
             
             $columnName = explode('.', $params->join->connection_column_with_alias);
             $columnName = last($columnName);
+            $columnName = helper('reverse_clear_string_for_db', $columnName);
             $params->column = get_attr_from_cache('columns', 'name', $columnName, '*');
             
             ColumnClassificationLibrary::relationDbTypes(   $this, 
@@ -97,8 +98,8 @@ trait BaseModelGetDataJoinTrait
         if(isset($params->column->join_table_alias)) 
             $params->join_table_alias = $params->column->join_table_alias;
 			
-		$params->join_source = helper('reverse_clear_string_for_db', $params->join_source);
-		if($params->join_source[0] == '"' && $params->join_source[strlen($params->join_source)-1] == '"') $params->join_source = substr($params->join_source, 1, -1);
+        $params->join_source = helper('reverse_clear_string_for_db', $params->join_source);
+        if($params->join_source[0] == '"' && $params->join_source[strlen($params->join_source)-1] == '"') $params->join_source = substr($params->join_source, 1, -1);
         
         $params->model->leftJoin(
                 $params->join_table->name . ' as ' . $params->join_table_alias, 
@@ -301,7 +302,10 @@ trait BaseModelGetDataJoinTrait
         global $pipe;
         $temp = ' '.$params->join->connection_column_with_alias;
         $temp = str_replace(' "', $pipe['table'].'."', $temp);
-
+        
+        if(\Request::segment(7) == 'archive' || \Request::segment(6) == 'deleted')
+            $temp = str_replace($pipe['table'].'.', $pipe['table'].'_archive.', $temp);
+        
         return $params->model->leftJoin(
                 $params->realtion_table_name, 
                 $params->realtion_column_name, 

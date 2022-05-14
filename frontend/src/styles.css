@@ -25,6 +25,12 @@ a span.zmdi, a span.ti, a i.ti, a i.zmdi
     color: white;
 }
 
+pre
+{
+    font-family: 'Comfortaa' !important; 
+    font-size: 13px !important;
+}
+
 .menu .zmdi, .navbar-nav .zmdi, .dropdown-item span
 {
     color: #666 !important; 

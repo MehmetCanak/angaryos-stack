@@ -121,6 +121,10 @@ trait TableTrait
         
         $params = helper('get_null_object');
         $params->column_array_id = read_from_response_data('column_array_id');
+        $params->column_array_id_query = read_from_response_data('column_array_id_query');
+        
+        $params->sorts = [];
+        $params->filters = [];
         
         $params->page = (int)read_from_response_data('page');
         if($params->page < 1) $params->page = 1;
@@ -170,17 +174,21 @@ trait TableTrait
             if($name == 'record_id') continue;
             
             param_value_is_correct($value, 'type', ['required', 'numeric']);
-
+            
             $this->columnIsAuthorized($name, 'query');
             
             if($value->type != 100 && $value->type !=101)
             {
                 param_is_have($value, 'filter');
                 
-                param_value_is_correct(
-                    [$name => $value->filter],
-                    $name,
-                    ['required', '*auto*']);
+                $dbTypeId = get_attr_from_cache('columns', 'name', $name, 'column_db_type_id');
+                $dbTypeName = get_attr_from_cache('column_db_types', 'id', $dbTypeId, 'name');
+                
+                if(!strstr($dbTypeName, 'json'))
+                    param_value_is_correct(
+                        [$name => $value->filter],
+                        $name,
+                        ['required', '*auto*']);
             }
         }
     }
@@ -403,6 +411,24 @@ trait TableTrait
             $return->upColumnData = @$return->upColumnDataRecord->{$return->upColumnName};
         
         return $return;
+    }
+    
+    private function getValidatedParamsForTableGroupByData($columnName)
+    {
+        $this->columnIsAuthorized($columnName, 'list');
+        
+        $params = (array)read_from_response_data('upData', TRUE);
+        if(count(array_keys($params)) == 0) return [];
+        
+        foreach($params as $columnName => $data)
+        {
+            param_value_is_correct(
+                    [$columnName => $data],
+                    $columnName,
+                    ['*auto*']);
+        }
+        
+        return $params;
     }
     
     

@@ -28,6 +28,7 @@ trait ReportSubscriberRequestTrait
 
         $records = $params->model->get();
         $records = $model->updateRecordsDataForResponse($records, $params->columns);
+        $records = $model->UpdateRecordsDataForTranslate($records, $params->columns);
         $records = $this->UpdateRecordsDataForReport($records, $params->columns);
         $record = $records[0];
 
@@ -82,6 +83,7 @@ trait ReportSubscriberRequestTrait
         
         $records = $params->model->get();
         $records = $model->updateRecordsDataForResponse($records, $params->columns);
+        $records = $model->UpdateRecordsDataForTranslate($records, $params->columns);
         $records = $this->UpdateRecordsDataForReport($records, $params->columns);
         
         $tableInfo = $model->getTableInfo($params->table_name);

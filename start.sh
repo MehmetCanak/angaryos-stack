@@ -9,6 +9,7 @@ cd angaryos-stack/
 
 chmod 755 -R ./frontend/
 chmod 777 -R ./backend/storage/
+chmod 777 -R ./backend/storage/logs/
 chmod 777 -R ./backend/public/
 chmod 777 -R ./backend/bootstrap/cache/
 chmod 777 -R ./services/

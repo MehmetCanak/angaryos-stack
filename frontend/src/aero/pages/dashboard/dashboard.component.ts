@@ -381,7 +381,7 @@ export class DashboardComponent
             
             setTimeout(() =>
             {
-                BaseHelper.getScript('assets/ext_modules/select2/select2.min.js', () => 
+                BaseHelper.getScript('assets/ext_modules/select2/select2.min.js'.tr(), () => 
                 {
                     $("#"+className+'_'+subClassName+'_'+itemName+' .select2').select2()
                     .on('select2:select', (event) => 

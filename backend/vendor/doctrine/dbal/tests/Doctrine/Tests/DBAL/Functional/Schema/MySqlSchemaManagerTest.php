@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\DBAL\Functional\Schema;
 
 use DateTime;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\MariaDb1027Platform;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Doctrine\DBAL\Schema\Comparator;
@@ -15,20 +16,24 @@ use Doctrine\Tests\Types\MySqlPointType;
 
 class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
 {
-    protected function setUp() : void
+    public static function setUpBeforeClass(): void
     {
-        parent::setUp();
-
-        if (Type::hasType('point')) {
-            return;
-        }
-
-        $this->resetSharedConn();
-
         Type::addType('point', MySqlPointType::class);
     }
 
-    public function testSwitchPrimaryKeyColumns() : void
+    protected function tearDown(): void
+    {
+        $this->markConnectionNotReusable();
+
+        parent::tearDown();
+    }
+
+    protected function supportsPlatform(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof MySqlPlatform;
+    }
+
+    public function testSwitchPrimaryKeyColumns(): void
     {
         $tableOld = new Table('switch_primary_key_columns');
         $tableOld->addColumn('foo_id', 'integer');
@@ -39,8 +44,10 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $tableNew     = clone $tableFetched;
         $tableNew->setPrimaryKey(['bar_id', 'foo_id']);
 
-        $comparator = new Comparator();
-        $this->schemaManager->alterTable($comparator->diffTable($tableFetched, $tableNew));
+        $diff = (new Comparator())->diffTable($tableFetched, $tableNew);
+        self::assertNotFalse($diff);
+
+        $this->schemaManager->alterTable($diff);
 
         $table      = $this->schemaManager->listTableDetails('switch_primary_key_columns');
         $primaryKey = $table->getPrimaryKeyColumns();
@@ -50,7 +57,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertContains('foo_id', $primaryKey);
     }
 
-    public function testDiffTableBug() : void
+    public function testDiffTableBug(): void
     {
         $schema = new Schema();
         $table  = $schema->createTable('diffbug_routing_translations');
@@ -67,13 +74,12 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $this->schemaManager->createTable($table);
         $tableFetched = $this->schemaManager->listTableDetails('diffbug_routing_translations');
 
-        $comparator = new Comparator();
-        $diff       = $comparator->diffTable($tableFetched, $table);
+        $diff = (new Comparator())->diffTable($tableFetched, $table);
 
         self::assertFalse($diff, 'no changes expected.');
     }
 
-    public function testFulltextIndex() : void
+    public function testFulltextIndex(): void
     {
         $table = new Table('fulltext_index');
         $table->addColumn('text', 'text');
@@ -90,7 +96,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($indexes['f_index']->hasFlag('fulltext'));
     }
 
-    public function testSpatialIndex() : void
+    public function testSpatialIndex(): void
     {
         $table = new Table('spatial_index');
         $table->addColumn('point', 'point');
@@ -105,9 +111,10 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $indexes = $this->schemaManager->listTableIndexes('spatial_index');
         self::assertArrayHasKey('s_index', $indexes);
         self::assertTrue($indexes['s_index']->hasFlag('spatial'));
+        self::assertSame([0 => null], $indexes['s_index']->getOption('lengths'));
     }
 
-    public function testIndexWithLength() : void
+    public function testIndexWithLength(): void
     {
         $table = new Table('index_length');
         $table->addColumn('text', 'string', ['length' => 255]);
@@ -120,10 +127,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertSame([128], $indexes['text_index']->getOption('lengths'));
     }
 
-    /**
-     * @group DBAL-400
-     */
-    public function testAlterTableAddPrimaryKey() : void
+    public function testAlterTableAddPrimaryKey(): void
     {
         $table = new Table('alter_table_add_pk');
         $table->addColumn('id', 'integer');
@@ -132,13 +136,15 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
 
         $this->schemaManager->createTable($table);
 
-        $comparator = new Comparator();
-        $diffTable  = clone $table;
+        $diffTable = clone $table;
 
         $diffTable->dropIndex('idx_id');
         $diffTable->setPrimaryKey(['id']);
 
-        $this->schemaManager->alterTable($comparator->diffTable($table, $diffTable));
+        $diff = (new Comparator())->diffTable($table, $diffTable);
+        self::assertNotFalse($diff);
+
+        $this->schemaManager->alterTable($diff);
 
         $table = $this->schemaManager->listTableDetails('alter_table_add_pk');
 
@@ -146,10 +152,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($table->hasPrimaryKey());
     }
 
-    /**
-     * @group DBAL-464
-     */
-    public function testDropPrimaryKeyWithAutoincrementColumn() : void
+    public function testDropPrimaryKeyWithAutoincrementColumn(): void
     {
         $table = new Table('drop_primary_key');
         $table->addColumn('id', 'integer', ['autoincrement' => true]);
@@ -162,9 +165,10 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
 
         $diffTable->dropPrimaryKey();
 
-        $comparator = new Comparator();
+        $diff = (new Comparator())->diffTable($table, $diffTable);
+        self::assertNotFalse($diff);
 
-        $this->schemaManager->alterTable($comparator->diffTable($table, $diffTable));
+        $this->schemaManager->alterTable($diff);
 
         $table = $this->schemaManager->listTableDetails('drop_primary_key');
 
@@ -172,10 +176,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertFalse($table->getColumn('id')->getAutoincrement());
     }
 
-    /**
-     * @group DBAL-789
-     */
-    public function testDoesNotPropagateDefaultValuesForUnsupportedColumnTypes() : void
+    public function testDoesNotPropagateDefaultValuesForUnsupportedColumnTypes(): void
     {
         if ($this->schemaManager->getDatabasePlatform() instanceof MariaDb1027Platform) {
             $this->markTestSkipped(
@@ -200,9 +201,10 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertNull($onlineTable->getColumn('def_blob_null')->getDefault());
         self::assertFalse($onlineTable->getColumn('def_blob_null')->getNotnull());
 
-        $comparator = new Comparator();
+        $diff = (new Comparator())->diffTable($table, $onlineTable);
+        self::assertNotFalse($diff);
 
-        $this->schemaManager->alterTable($comparator->diffTable($table, $onlineTable));
+        $this->schemaManager->alterTable($diff);
 
         $onlineTable = $this->schemaManager->listTableDetails('text_blob_default_value');
 
@@ -214,7 +216,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertFalse($onlineTable->getColumn('def_blob_null')->getNotnull());
     }
 
-    public function testColumnCharset() : void
+    public function testColumnCharset(): void
     {
         $table = new Table('test_column_charset');
         $table->addColumn('id', 'integer');
@@ -231,7 +233,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertEquals('latin1', $columns['bar']->getPlatformOption('charset'));
     }
 
-    public function testAlterColumnCharset() : void
+    public function testAlterColumnCharset(): void
     {
         $tableName = 'test_alter_column_charset';
 
@@ -243,19 +245,23 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $diffTable = clone $table;
         $diffTable->getColumn('col_text')->setPlatformOption('charset', 'ascii');
 
-        $comparator = new Comparator();
+        $diff = (new Comparator())->diffTable($table, $diffTable);
+        self::assertNotFalse($diff);
 
-        $this->schemaManager->alterTable($comparator->diffTable($table, $diffTable));
+        $this->schemaManager->alterTable($diff);
 
         $table = $this->schemaManager->listTableDetails($tableName);
 
         self::assertEquals('ascii', $table->getColumn('col_text')->getPlatformOption('charset'));
     }
 
-    public function testColumnCharsetChange() : void
+    public function testColumnCharsetChange(): void
     {
         $table = new Table('test_column_charset_change');
-        $table->addColumn('col_string', 'string')->setLength(100)->setNotnull(true)->setPlatformOption('charset', 'utf8');
+        $table->addColumn('col_string', 'string')
+            ->setLength(100)
+            ->setNotnull(true)
+            ->setPlatformOption('charset', 'utf8');
 
         $diffTable = clone $table;
         $diffTable->getColumn('col_string')->setPlatformOption('charset', 'ascii');
@@ -264,12 +270,16 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $toSchema   = new Schema([$diffTable]);
 
         $diff = $fromSchema->getMigrateToSql($toSchema, $this->connection->getDatabasePlatform());
-        self::assertContains('ALTER TABLE test_column_charset_change CHANGE col_string col_string VARCHAR(100) CHARACTER SET ascii NOT NULL', $diff);
+        self::assertContains(
+            'ALTER TABLE test_column_charset_change CHANGE col_string'
+                . ' col_string VARCHAR(100) CHARACTER SET ascii NOT NULL',
+            $diff
+        );
     }
 
-    public function testColumnCollation() : void
+    public function testColumnCollation(): void
     {
-        $table                                  = new Table('test_collation');
+        $table = new Table('test_collation');
         $table->addOption('collate', $collation = 'latin1_swedish_ci');
         $table->addOption('charset', 'latin1');
         $table->addColumn('id', 'integer');
@@ -288,10 +298,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertInstanceOf(BlobType::class, $columns['baz']->getType());
     }
 
-    /**
-     * @group DBAL-843
-     */
-    public function testListLobTypeColumns() : void
+    public function testListLobTypeColumns(): void
     {
         $tableName = 'lob_type_columns';
         $table     = new Table($tableName);
@@ -347,10 +354,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         );
     }
 
-    /**
-     * @group DBAL-423
-     */
-    public function testDiffListGuidTableColumn() : void
+    public function testDiffListGuidTableColumn(): void
     {
         $offlineTable = new Table('list_guid_table_column');
         $offlineTable->addColumn('col_guid', 'guid');
@@ -367,10 +371,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         );
     }
 
-    /**
-     * @group DBAL-1082
-     */
-    public function testListDecimalTypeColumns() : void
+    public function testListDecimalTypeColumns(): void
     {
         $tableName = 'test_list_decimal_columns';
         $table     = new Table($tableName);
@@ -388,10 +389,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($columns['col_unsigned']->getUnsigned());
     }
 
-    /**
-     * @group DBAL-1082
-     */
-    public function testListFloatTypeColumns() : void
+    public function testListFloatTypeColumns(): void
     {
         $tableName = 'test_list_float_columns';
         $table     = new Table($tableName);
@@ -409,7 +407,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($columns['col_unsigned']->getUnsigned());
     }
 
-    public function testJsonColumnType() : void
+    public function testJsonColumnType(): void
     {
         $table = new Table('test_mysql_json');
         $table->addColumn('col_json', 'json');
@@ -420,7 +418,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertSame(Types::JSON, $columns['col_json']->getType()->getName());
     }
 
-    public function testColumnDefaultCurrentTimestamp() : void
+    public function testColumnDefaultCurrentTimestamp(): void
     {
         $platform = $this->schemaManager->getDatabasePlatform();
 
@@ -443,7 +441,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertFalse($diff, 'Tables should be identical with column defaults.');
     }
 
-    public function testColumnDefaultsAreValid() : void
+    public function testColumnDefaultsAreValid(): void
     {
         $table = new Table('test_column_defaults_are_valid');
 
@@ -458,13 +456,14 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
 
         $this->schemaManager->dropAndCreateTable($table);
 
-        $this->connection->executeUpdate(
+        $this->connection->executeStatement(
             'INSERT INTO test_column_defaults_are_valid () VALUES()'
         );
 
         $row = $this->connection->fetchAssoc(
             'SELECT *, DATEDIFF(CURRENT_TIMESTAMP(), col_datetime) as diff_seconds FROM test_column_defaults_are_valid'
         );
+        self::assertNotFalse($row);
 
         self::assertInstanceOf(DateTime::class, DateTime::createFromFormat('Y-m-d H:i:s', $row['col_datetime']));
         self::assertNull($row['col_datetime_null']);
@@ -486,7 +485,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
      * CURRENT_TIME as 'currtime()' and CURRENT_DATE as 'currdate()'.
      * This test also ensure proper aliasing to not trigger a table diff.
      */
-    public function testColumnDefaultValuesCurrentTimeAndDate() : void
+    public function testColumnDefaultValuesCurrentTimeAndDate(): void
     {
         if (! $this->schemaManager->getDatabasePlatform() instanceof MariaDb1027Platform) {
             $this->markTestSkipped('Only relevant for MariaDb102Platform.');
@@ -518,7 +517,7 @@ class MySqlSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertFalse($diff, 'Tables should be identical with column defauts time and date.');
     }
 
-    public function testEnsureTableOptionsAreReflectedInMetadata() : void
+    public function testEnsureTableOptionsAreReflectedInMetadata(): void
     {
         $this->connection->query('DROP TABLE IF EXISTS test_table_metadata');
 
@@ -547,7 +546,7 @@ SQL;
         ], $onlineTable->getOption('create_options'));
     }
 
-    public function testEnsureTableWithoutOptionsAreReflectedInMetadata() : void
+    public function testEnsureTableWithoutOptionsAreReflectedInMetadata(): void
     {
         $this->connection->query('DROP TABLE IF EXISTS test_table_empty_metadata');
 
@@ -561,7 +560,7 @@ SQL;
         self::assertEquals([], $onlineTable->getOption('create_options'));
     }
 
-    public function testParseNullCreateOptions() : void
+    public function testParseNullCreateOptions(): void
     {
         $table = $this->schemaManager->listTableDetails('sys.processlist');
 

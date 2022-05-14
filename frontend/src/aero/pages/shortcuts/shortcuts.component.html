@@ -5,7 +5,7 @@
                 <div class="col-sm-12">
                     <div class="card" style="text-align: center;">
                         <div class="form-group" id="name_surname-group" style="margin-top: 10">
-                            <input (input)="search($event.target.value)" class="form-control" placeholder="Arama" name="shortcuts-search" id="shortcuts-search" style="background-color: white;">
+                            <input (input)="search($event.target.value)" class="form-control" placeholder="{{ 'Arama'.tr() }}" name="shortcuts-search" id="shortcuts-search" style="background-color: white;">
                         </div>
                         <span style="margin: auto">
                             <button 
@@ -21,7 +21,7 @@
                         </span>
                         
                         <button (click)="openEditShortcutsModal()" class="btn btn-lg btn-block btn-danger" style="margin-top: 30">
-                            Kısayollarımı Düzenle
+                            {{ "Kısayollarımı Düzenle".tr() }}
                         </button>
                     </div>
                 </div>
@@ -30,7 +30,7 @@
     </div>
 </section>
 
-<div class="modal fade" id="editShortcutsModal" tabindex="-1" role="dialog" aria-labelledby="editShortcutsModalLabel" aria-hidden="true">
+<div class="modal fade" id="editShortcutsModal" role="dialog" aria-labelledby="editShortcutsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-body" style="padding: 15px !important;">
@@ -38,7 +38,7 @@
                     <div class="form-group" id="search_all_shortcuts-group">
                         
                         <input (input)="searchAllShurtcut($event.target.value)" 
-                                class="form-control" placeholder="Arama" 
+                                class="form-control" placeholder="{{ 'Arama'.tr() }}" 
                                 name="shortcuts-search" id="shortcuts-search" 
                                 style="background-color: white;">
                     </div>

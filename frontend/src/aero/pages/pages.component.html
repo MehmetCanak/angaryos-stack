@@ -3,7 +3,7 @@
         <div class="page-loader-wrapper">
             <div class="loader">
                 <div class="m-t-30"><img class="zmdi-hc-spin" src="assets/themes/aero/assets/images/loader.svg" width="48" height="48" alt="Aero"></div>
-                <p>Bekleyin...</p>
+                <p>{{ 'Bekleyin...'.tr() }}</p>
             </div>
         </div>
         
@@ -11,19 +11,19 @@
         <div class="overlay"></div>
         
         <!-- Main Search -->
-        <div id="search" style="z-index: 999999999;background-color: #ffffffe4;">
+        <div id="search" style="z-index: 999999999;background-color: #fffffff2 !important;">
             <button id="close" type="button" class="close btn btn-primary btn-icon btn-icon-mini btn-round">x</button>
             <form>
-                <input style="color: black" id="searchWords" type="search" value="" placeholder="Nasıl yardımcı olabilirim?" />
-                <button (click)="search()" type="submit" class="btn btn-primary">Arama</button>
+                <input style="color: black" id="searchWords" type="search" value="" placeholder="{{ 'Nasıl yardımcı olabilirim?'.tr() }}" />
+                <button (click)="search()" type="submit" class="btn btn-primary">{{ 'Arama'.tr() }}</button>
             </form>
         </div>
         
         <!-- Right Icon menu Sidebar -->
         <div class="navbar-right">
             <ul class="navbar-nav">
-                <li  *ngIf="false">
-                    <a style="padding: 10px !important; margin-bottom: 10px !important;" href="#search" class="main_search" title="Search...">
+                <li >
+                    <a style="padding: 10px !important; margin-bottom: 10px !important;" href="#search" class="main_search" title="{{ 'Arama'.tr() }}">
                         <i class="zmdi zmdi-search"></i>
                     </a>
                 </li>
@@ -76,7 +76,7 @@
                 <li class="dropdown" id="shortcuts" *ngIf="isBrowser">
                     <a style="padding: 10px !important; margin-bottom: 10px !important;" 
                        (click)="openShotcutsModal()"
-                        title="Kısayollar"  role="button">
+                        title="{{ 'Kısayollar'.tr() }}"  role="button">
                         
                         <i class="zmdi zmdi-apps"></i>
                     </a>
@@ -91,7 +91,7 @@
                         (click)="logout()"
                         style="padding: 10px !important; margin-bottom: 10px !important;"  
                         [class]="getLogoutButtonClass()" 
-                        title="Çıkış Yap">
+                        title="{{ 'Çıkış Yap'.tr() }}">
 
                         <i class="zmdi zmdi-power"></i>
                     </a>
@@ -123,7 +123,7 @@
                     <li>
                         <table style="padding: 0; margin: 0;width: 100%;">
                             <tr>
-                                <td><input id="menuFilter" placeholder="Filtrele" (input)="searchInMenuInputChanged($event)" class="form-control"></td>
+                                <td><input id="menuFilter" placeholder="{{ 'Filtrele'.tr() }}" (input)="searchInMenuInputChanged($event)" class="form-control"></td>
                                 <td style="padding: 0 0 0 5px;">
                                     <a style="padding: 0;" (click)="clearMenuFilter()">x</a>
                                 </td>
@@ -209,6 +209,23 @@
         
         <mobile-app-bar-element></mobile-app-bar-element>
         
+        <div style="text-align: right; position: absolute; right: 80;top: 0;z-index: 99999999;">
+            <select class="form-control ms"
+                    style="width: 100px; height: 26px; padding: 0 5px; margin: 7px;background-color: white;" 
+                    [value]="lang"
+                    (change)="langChange($event.target.value)" 
+                   >
+                   <option value="1" >
+                       Türkçe
+                   </option>
+                   <option value="2" >
+                       English
+                   </option>
+            </select>
+        </div>
+        
+        <br>
+        
         <router-outlet></router-outlet>
         
         <mobile-bottom-menu-element></mobile-bottom-menu-element> 
@@ -224,8 +241,7 @@
 
 
 <div *ngIf="isBrowser"
-    class="modal fade" id="browserShortcutsModal"
-    tabindex="-1" role="dialog" 
+    class="modal fade" id="browserShortcutsModal" role="dialog" 
     aria-labelledby="browserShortcutsModalLabel" aria-hidden="true">
     
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">

@@ -2,13 +2,20 @@
 
 namespace Doctrine\Tests\DBAL\Functional\Schema;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\SQLAnywherePlatform;
 use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\View;
 
 class SQLAnywhereSchemaManagerTest extends SchemaManagerFunctionalTestCase
 {
-    public function testCreateAndListViews() : void
+    protected function supportsPlatform(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof SQLAnywherePlatform;
+    }
+
+    public function testCreateAndListViews(): void
     {
         $this->createTestTable('view_test_table');
 
@@ -24,10 +31,13 @@ class SQLAnywhereSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertCount(1, $views, 'Database has to have one view.');
         self::assertInstanceOf(View::class, $views[$name]);
         self::assertEquals($name, $views[$name]->getName());
-        self::assertRegExp('/^SELECT \* from "?DBA"?\."?view_test_table"?$/', $views[$name]->getSql());
+        self::assertMatchesRegularExpression(
+            '/^SELECT \* from "?DBA"?\."?view_test_table"?$/',
+            $views[$name]->getSql()
+        );
     }
 
-    public function testDropAndCreateAdvancedIndex() : void
+    public function testDropAndCreateAdvancedIndex(): void
     {
         $table = $this->getTestTable('test_create_advanced_index');
         $this->schemaManager->dropAndCreateTable($table);
@@ -37,7 +47,7 @@ class SQLAnywhereSchemaManagerTest extends SchemaManagerFunctionalTestCase
         );
 
         $tableIndexes = $this->schemaManager->listTableIndexes('test_create_advanced_index');
-        self::assertIsArray($tableIndexes);
+
         self::assertEquals('test', $tableIndexes['test']->getName());
         self::assertEquals(['test'], $tableIndexes['test']->getColumns());
         self::assertTrue($tableIndexes['test']->isUnique());
@@ -47,7 +57,7 @@ class SQLAnywhereSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($tableIndexes['test']->hasFlag('for_olap_workload'));
     }
 
-    public function testListTableColumnsWithFixedStringTypeColumn() : void
+    public function testListTableColumnsWithFixedStringTypeColumn(): void
     {
         $table = new Table('list_table_columns_char');
         $table->addColumn('id', 'integer', ['notnull' => true]);
@@ -62,7 +72,7 @@ class SQLAnywhereSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertTrue($columns['test']->getFixed());
     }
 
-    public function testCommentInTable() : void
+    public function testCommentInTable(): void
     {
         self::markTestSkipped('Table level comments are not supported on SQLAnywhere');
     }

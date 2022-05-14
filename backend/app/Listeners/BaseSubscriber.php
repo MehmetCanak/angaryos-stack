@@ -49,6 +49,7 @@ class BaseSubscriber
         
         $events->listen('record.export.requested', 'App\Listeners\TableSubscriber@exportRequested');
         
+        $events->listen('record.getTableGroupByData.requested', 'App\Listeners\TableSubscriber@getTableGroupByDataRequested');
         
         $events->listen('record.selectColummnData.requested', 'App\Listeners\TableSubscriber@selectColumnDataRequested');
         $events->listen('record.realtionTableData.requested', 'App\Listeners\TableSubscriber@realtionTableDataRequested');
@@ -57,6 +58,7 @@ class BaseSubscriber
         
         
         $events->listen('record.quickSearch.requested', 'App\Listeners\TableSubscriber@quickSearch');
+        $events->listen('record.searchGeoInMultiTables.requested', 'App\Listeners\TableSubscriber@searchGeoInMultiTables');
         
         
         

@@ -1,99 +1,126 @@
 <?php
+
+declare(strict_types=1);
+
 namespace GuzzleHttp\Tests\Psr7;
 
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\FnStream;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers GuzzleHttp\Psr7\FnStream
  */
-class FnStreamTest extends BaseTest
+class FnStreamTest extends TestCase
 {
-    /**
-     * @expectedException \BadMethodCallException
-     * @expectedExceptionMessage seek() is not implemented in the FnStream
-     */
-    public function testThrowsWhenNotImplemented()
+    public function testThrowsWhenNotImplemented(): void
     {
+        $this->expectException(\BadMethodCallException::class);
+        $this->expectExceptionMessage('seek() is not implemented in the FnStream');
         (new FnStream([]))->seek(1);
     }
 
-    public function testProxiesToFunction()
+    public function testProxiesToFunction(): void
     {
         $s = new FnStream([
             'read' => function ($len) {
-                $this->assertEquals(3, $len);
+                $this->assertSame(3, $len);
                 return 'foo';
             }
         ]);
 
-        $this->assertEquals('foo', $s->read(3));
+        self::assertSame('foo', $s->read(3));
     }
 
-    public function testCanCloseOnDestruct()
+    public function testCanCloseOnDestruct(): void
     {
         $called = false;
         $s = new FnStream([
-            'close' => function () use (&$called) {
+            'close' => function () use (&$called): void {
                 $called = true;
             }
         ]);
         unset($s);
-        $this->assertTrue($called);
+        self::assertTrue($called);
     }
 
-    public function testDoesNotRequireClose()
+    public function testDoesNotRequireClose(): void
     {
         $s = new FnStream([]);
         unset($s);
-        $this->assertTrue(true); // strict mode requires an assertion
+        self::assertTrue(true); // strict mode requires an assertion
     }
 
-    public function testDecoratesStream()
+    public function testDecoratesStream(): void
     {
-        $a = Psr7\stream_for('foo');
+        $a = Psr7\Utils::streamFor('foo');
         $b = FnStream::decorate($a, []);
-        $this->assertEquals(3, $b->getSize());
-        $this->assertEquals($b->isWritable(), true);
-        $this->assertEquals($b->isReadable(), true);
-        $this->assertEquals($b->isSeekable(), true);
-        $this->assertEquals($b->read(3), 'foo');
-        $this->assertEquals($b->tell(), 3);
-        $this->assertEquals($a->tell(), 3);
-        $this->assertSame('', $a->read(1));
-        $this->assertEquals($b->eof(), true);
-        $this->assertEquals($a->eof(), true);
+        self::assertSame(3, $b->getSize());
+        self::assertSame($b->isWritable(), true);
+        self::assertSame($b->isReadable(), true);
+        self::assertSame($b->isSeekable(), true);
+        self::assertSame($b->read(3), 'foo');
+        self::assertSame($b->tell(), 3);
+        self::assertSame($a->tell(), 3);
+        self::assertSame('', $a->read(1));
+        self::assertSame($b->eof(), true);
+        self::assertSame($a->eof(), true);
         $b->seek(0);
-        $this->assertEquals('foo', (string) $b);
+        self::assertSame('foo', (string) $b);
         $b->seek(0);
-        $this->assertEquals('foo', $b->getContents());
-        $this->assertEquals($a->getMetadata(), $b->getMetadata());
+        self::assertSame('foo', $b->getContents());
+        self::assertSame($a->getMetadata(), $b->getMetadata());
         $b->seek(0, SEEK_END);
         $b->write('bar');
-        $this->assertEquals('foobar', (string) $b);
-        $this->assertInternalType('resource', $b->detach());
+        self::assertSame('foobar', (string) $b);
+        self::assertIsResource($b->detach());
         $b->close();
     }
 
-    public function testDecoratesWithCustomizations()
+    public function testDecoratesWithCustomizations(): void
     {
         $called = false;
-        $a = Psr7\stream_for('foo');
+        $a = Psr7\Utils::streamFor('foo');
         $b = FnStream::decorate($a, [
             'read' => function ($len) use (&$called, $a) {
                 $called = true;
                 return $a->read($len);
             }
         ]);
-        $this->assertEquals('foo', $b->read(3));
-        $this->assertTrue($called);
+        self::assertSame('foo', $b->read(3));
+        self::assertTrue($called);
     }
 
-    public function testDoNotAllowUnserialization()
+    public function testDoNotAllowUnserialization(): void
     {
         $a = new FnStream([]);
         $b = serialize($a);
-        $this->expectException('\LogicException', 'FnStream should never be unserialized');
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('FnStream should never be unserialized');
         unserialize($b);
+    }
+
+    /**
+     * @requires PHP < 7.4
+     */
+    public function testThatConvertingStreamToStringWillTriggerErrorAndWillReturnEmptyString(): void
+    {
+        $a = new FnStream([
+            '__toString' => function (): void {
+                throw new \Exception();
+            },
+        ]);
+
+        $errors = [];
+        set_error_handler(function (int $errorNumber, string $errorMessage) use (&$errors): void {
+            $errors[] = ['number' => $errorNumber, 'message' => $errorMessage];
+        });
+        (string) $a;
+
+        restore_error_handler();
+
+        self::assertCount(1, $errors);
+        self::assertSame(E_USER_ERROR, $errors[0]['number']);
+        self::assertStringStartsWith('GuzzleHttp\Psr7\FnStream::__toString exception:', $errors[0]['message']);
     }
 }

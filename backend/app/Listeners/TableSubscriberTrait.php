@@ -40,7 +40,7 @@ trait TableSubscriberTrait
         $tableInfo = $model->getTableInfo($params->table_name);
         
         $records = $model->updateRecordsDataForResponse($records, $params->columns);
-        
+        $records = $model->UpdateRecordsDataForTranslate($records, $params->columns);
         $records = $model->updateRecordsESignDataForResponse($records, $tableInfo, $params->columns);
         
         $columns = $model->getFilteredColumns($params->columns);
@@ -65,6 +65,64 @@ trait TableSubscriberTrait
             'pages' => $pages,
             'all_records_count' => $count
         ];
+    }
+    
+    private function getColumnIdsFromColumnArray($model, $id)
+    {
+        $rt = [];
+        if($id > 0)
+        {
+            $temp = get_attr_from_cache('column_arrays', 'id', $id, 'column_ids');
+            $rt = json_decode($temp);
+        }
+        else
+        {
+            $allColumns = $model->getAllColumnsFromDB();
+            foreach($allColumns as $column) array_push($rt, $column['id']);
+        }
+        
+        return $rt;
+    }    
+    
+    public function getDataForSearchGeoInMultiTables($params) 
+    {
+        $auths = \Auth::user()->auths;
+        $geoColumns = [];
+        
+        $return = [];
+        foreach($params->tables as $tableData)
+        {
+            $mapAuths = @$auths['tables'][$tableData->name]['maps'];
+            if(!$mapAuths) continue;
+            if(!in_array(0, $mapAuths) && !in_array(2, $mapAuths)) continue;
+            
+            $model = new BaseModel($tableData->name);
+            $allColumns = $model->getAllColumnsFromDB();
+            
+            $tableData->table_name = $tableData->name;
+            $tableData->limit = 50;
+            $tableData->page = 1;
+            
+            $control = FALSE;
+            foreach($allColumns as $col)
+                if(strlen($col['srid']) > 0)
+                {
+                    $filter = helper('get_null_object');
+                    $filter->type = 1;
+                    $filter->guiType = 'multipolygon';
+                    $filter->filter = json_encode([$params->wkt]);
+                    $filter->description = '';
+                    
+                    $tableData->filters->{$col['name']} = $filter;
+                    
+                    $control = TRUE;
+                    break;//birden fazla geo kolon varsa "and" olarak eklenir
+                }
+            
+            if($control) $return[$tableData->name] = $this->listRequested($model, $tableData);
+        }
+        
+        return $return;
     }
     
     public function getDataForQuickSearch($model, $params, $words) 
@@ -96,6 +154,7 @@ trait TableSubscriberTrait
         $records = $params->model->get();
         
         $records = $model->updateRecordsDataForResponse($records, $params->columns);
+        $records = $model->UpdateRecordsDataForTranslate($records, $params->columns);
         
         $tableInfo = $model->getTableInfo($params->table_name);
         
@@ -348,8 +407,11 @@ trait TableSubscriberTrait
         
         $params->model->limit($params->limit);
         $params->model->offset($params->limit * ($params->page - 1));
+        
         $records = $params->model->get();
+        
         $records = $record->updateRecordsDataForResponse($records, $params->columns);
+        $records = $record->UpdateRecordsDataForTranslate($records, $params->columns);
         
         $tableInfo = $record->getTableInfo($params->table_name);
         
@@ -408,9 +470,22 @@ trait TableSubscriberTrait
         
         foreach($filters as $filterId)
         {
-            $sqlCode = get_attr_from_cache('data_filters', 'id', $filterId, 'sql_code');
-            $sql = str_replace('TABLE', $tableName, $sqlCode);            
-            $model->whereRaw($sql);
+            $sqlCode = ' '.get_attr_from_cache('data_filters', 'id', $filterId, 'sql_code');
+            $sqlCode = helper('reverse_clear_string_for_db', $sqlCode);            
+            $sqlCode = str_replace('TABLE', $tableName, $sqlCode);          
+            $sqlCode = str_replace(' "', ' '.$tableName.'."', $sqlCode);
+            
+            if(\Request::segment(7) == 'archive' || \Request::segment(6) == 'deleted')
+            {
+                $sqlCode = str_replace($tableName.'.', $tableName.'_archive.', $sqlCode);
+                
+                $sqlCode = str_replace($tableName.'_archive.id', $tableName.'_archive.record_id', $sqlCode);
+                $sqlCode = str_replace('"'.$tableName.'_archive".id', $tableName.'_archive.record_id', $sqlCode);
+                $sqlCode = str_replace($tableName.'_archive."id"', $tableName.'_archive.record_id', $sqlCode);
+                $sqlCode = str_replace('"'.$tableName.'_archive"."id"', $tableName.'_archive.record_id', $sqlCode);
+            }
+            
+            $model->whereRaw($sqlCode);
         }
     }
     
@@ -426,8 +501,11 @@ trait TableSubscriberTrait
         
         $params->model->limit($params->limit);
         $params->model->offset($params->limit * ($params->page - 1));
+        
         $records = $params->model->get();
+        
         $records = $params->recordModel->updateRecordsDataForResponse($records, $params->columns);
+        $records = $params->recordModel->UpdateRecordsDataForTranslate($records, $params->columns);
         
         $tableInfo = $params->recordModel->getTableInfo($params->table_name);
         
@@ -990,11 +1068,10 @@ trait TableSubscriberTrait
         
         $record = $params->model->first();
 
-        $record = $model->updateRecordsDataForResponse($record, $params->columns);
-        
+        $record = $model->updateRecordsDataForResponse($record, $params->columns);        
         $record = $this->replaceRelationColumnDataForForm($model, $record, $columnSet);
-
         $record = $this->filterRecordsColumnWithColumns([$record], $columnSet)[0];
+        $record = $model->UpdateRecordsDataForTranslate([$record], $params->columns)[0];
         
         return 
         [
@@ -1117,6 +1194,7 @@ trait TableSubscriberTrait
         if($record == NULL) custom_abort ('no.auth.for.this.record');
         
         $record = $model->updateRecordsDataForResponse($record, $params->columns);
+        $record = $model->UpdateRecordsDataForTranslate([$record], $params->columns)[0];
         
         return 
         [

@@ -1,54 +1,54 @@
 <?php
+
+declare(strict_types=1);
+
 namespace GuzzleHttp\Tests\Psr7;
 
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\MultipartStream;
+use PHPUnit\Framework\TestCase;
 
-class MultipartStreamTest extends BaseTest
+class MultipartStreamTest extends TestCase
 {
-    public function testCreatesDefaultBoundary()
+    public function testCreatesDefaultBoundary(): void
     {
         $b = new MultipartStream();
-        $this->assertNotEmpty($b->getBoundary());
+        self::assertNotEmpty($b->getBoundary());
     }
 
-    public function testCanProvideBoundary()
+    public function testCanProvideBoundary(): void
     {
         $b = new MultipartStream([], 'foo');
-        $this->assertEquals('foo', $b->getBoundary());
+        self::assertSame('foo', $b->getBoundary());
     }
 
-    public function testIsNotWritable()
+    public function testIsNotWritable(): void
     {
         $b = new MultipartStream();
-        $this->assertFalse($b->isWritable());
+        self::assertFalse($b->isWritable());
     }
 
-    public function testCanCreateEmptyStream()
+    public function testCanCreateEmptyStream(): void
     {
         $b = new MultipartStream();
         $boundary = $b->getBoundary();
-        $this->assertSame("--{$boundary}--\r\n", $b->getContents());
-        $this->assertSame(strlen($boundary) + 6, $b->getSize());
+        self::assertSame("--{$boundary}--\r\n", $b->getContents());
+        self::assertSame(strlen($boundary) + 6, $b->getSize());
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testValidatesFilesArrayElement()
+    public function testValidatesFilesArrayElement(): void
     {
+        $this->expectException(\InvalidArgumentException::class);
         new MultipartStream([['foo' => 'bar']]);
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testEnsuresFileHasName()
+    public function testEnsuresFileHasName(): void
     {
+        $this->expectException(\InvalidArgumentException::class);
         new MultipartStream([['contents' => 'bar']]);
     }
 
-    public function testSerializesFields()
+    public function testSerializesFields(): void
     {
         $b = new MultipartStream([
             [
@@ -60,13 +60,25 @@ class MultipartStreamTest extends BaseTest
                 'contents' => 'bam'
             ]
         ], 'boundary');
-        $this->assertEquals(
-            "--boundary\r\nContent-Disposition: form-data; name=\"foo\"\r\nContent-Length: 3\r\n\r\n"
-            . "bar\r\n--boundary\r\nContent-Disposition: form-data; name=\"baz\"\r\nContent-Length: 3"
-            . "\r\n\r\nbam\r\n--boundary--\r\n", (string) $b);
+
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"foo\"\r\n",
+            "Content-Length: 3\r\n",
+            "\r\n",
+            "bar\r\n",
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"baz\"\r\n",
+            "Content-Length: 3\r\n",
+            "\r\n",
+            "bam\r\n",
+            "--boundary--\r\n",
+        ]);
+
+        self::assertSame($expected, (string) $b);
     }
 
-    public function testSerializesNonStringFields()
+    public function testSerializesNonStringFields(): void
     {
         $b = new MultipartStream([
             [
@@ -86,30 +98,51 @@ class MultipartStreamTest extends BaseTest
                 'contents' => (float) 1.1
             ]
         ], 'boundary');
-        $this->assertEquals(
-            "--boundary\r\nContent-Disposition: form-data; name=\"int\"\r\nContent-Length: 1\r\n\r\n"
-            . "1\r\n--boundary\r\nContent-Disposition: form-data; name=\"bool\"\r\n\r\n\r\n--boundary"
-            . "\r\nContent-Disposition: form-data; name=\"bool2\"\r\nContent-Length: 1\r\n\r\n"
-            . "1\r\n--boundary\r\nContent-Disposition: form-data; name=\"float\"\r\nContent-Length: 3"
-            . "\r\n\r\n1.1\r\n--boundary--\r\n", (string) $b);
+
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"int\"\r\n",
+            "Content-Length: 1\r\n",
+            "\r\n",
+            "1\r\n",
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"bool\"\r\n",
+            "\r\n",
+            "\r\n",
+            "--boundary",
+            "\r\n",
+            "Content-Disposition: form-data; name=\"bool2\"\r\n",
+            "Content-Length: 1\r\n",
+            "\r\n",
+            "1\r\n",
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"float\"\r\n",
+            "Content-Length: 3\r\n",
+            "\r\n",
+            "1.1\r\n",
+            "--boundary--\r\n",
+            "",
+        ]);
+
+        self::assertSame($expected, (string) $b);
     }
 
-    public function testSerializesFiles()
+    public function testSerializesFiles(): void
     {
-        $f1 = Psr7\FnStream::decorate(Psr7\stream_for('foo'), [
-            'getMetadata' => function () {
+        $f1 = Psr7\FnStream::decorate(Psr7\Utils::streamFor('foo'), [
+            'getMetadata' => static function (): string {
                 return '/foo/bar.txt';
             }
         ]);
 
-        $f2 = Psr7\FnStream::decorate(Psr7\stream_for('baz'), [
-            'getMetadata' => function () {
+        $f2 = Psr7\FnStream::decorate(Psr7\Utils::streamFor('baz'), [
+            'getMetadata' => static function (): string {
                 return '/foo/baz.jpg';
             }
         ]);
 
-        $f3 = Psr7\FnStream::decorate(Psr7\stream_for('bar'), [
-            'getMetadata' => function () {
+        $f3 = Psr7\FnStream::decorate(Psr7\Utils::streamFor('bar'), [
+            'getMetadata' => static function (): string {
                 return '/foo/bar.gif';
             }
         ]);
@@ -129,36 +162,68 @@ class MultipartStreamTest extends BaseTest
             ],
         ], 'boundary');
 
-        $expected = <<<EOT
---boundary
-Content-Disposition: form-data; name="foo"; filename="bar.txt"
-Content-Length: 3
-Content-Type: text/plain
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"foo\"; filename=\"bar.txt\"\r\n",
+            "Content-Length: 3\r\n",
+            "Content-Type: text/plain\r\n",
+            "\r\n",
+            "foo\r\n",
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"qux\"; filename=\"baz.jpg\"\r\n",
+            "Content-Length: 3\r\n",
+            "Content-Type: image/jpeg\r\n",
+            "\r\n",
+            "baz\r\n",
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"qux\"; filename=\"bar.gif\"\r\n",
+            "Content-Length: 3\r\n",
+            "Content-Type: image/gif\r\n",
+            "\r\n",
+            "bar\r\n",
+            "--boundary--\r\n",
+        ]);
 
-foo
---boundary
-Content-Disposition: form-data; name="qux"; filename="baz.jpg"
-Content-Length: 3
-Content-Type: image/jpeg
-
-baz
---boundary
-Content-Disposition: form-data; name="qux"; filename="bar.gif"
-Content-Length: 3
-Content-Type: image/gif
-
-bar
---boundary--
-
-EOT;
-
-        $this->assertEquals($expected, str_replace("\r", '', $b));
+        self::assertSame($expected, (string) $b);
     }
 
-    public function testSerializesFilesWithCustomHeaders()
+    public function testSerializesFilesWithMixedNewlines(): void
     {
-        $f1 = Psr7\FnStream::decorate(Psr7\stream_for('foo'), [
-            'getMetadata' => function () {
+        $content = "LF\nCRLF\r\nCR\r";
+        $contentLength = \strlen($content);
+
+        $f1 = Psr7\FnStream::decorate(Psr7\Utils::streamFor($content), [
+            'getMetadata' => static function (): string {
+                return '/foo/newlines.txt';
+            }
+        ]);
+
+        $b = new MultipartStream([
+            [
+                'name'     => 'newlines',
+                'contents' => $f1
+            ],
+        ], 'boundary');
+
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"newlines\"; filename=\"newlines.txt\"\r\n",
+            "Content-Length: {$contentLength}\r\n",
+            "Content-Type: text/plain\r\n",
+            "\r\n",
+            "{$content}\r\n",
+            "--boundary--\r\n",
+        ]);
+
+        // Do not perform newline normalization in the assertion! The `$content` must
+        // be embedded as-is in the payload.
+        self::assertSame($expected, (string) $b);
+    }
+
+    public function testSerializesFilesWithCustomHeaders(): void
+    {
+        $f1 = Psr7\FnStream::decorate(Psr7\Utils::streamFor('foo'), [
+            'getMetadata' => static function (): string {
                 return '/foo/bar.txt';
             }
         ]);
@@ -174,31 +239,30 @@ EOT;
             ]
         ], 'boundary');
 
-        $expected = <<<EOT
---boundary
-x-foo: bar
-content-disposition: custom
-Content-Length: 3
-Content-Type: text/plain
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "x-foo: bar\r\n",
+            "content-disposition: custom\r\n",
+            "Content-Length: 3\r\n",
+            "Content-Type: text/plain\r\n",
+            "\r\n",
+            "foo\r\n",
+            "--boundary--\r\n",
+        ]);
 
-foo
---boundary--
-
-EOT;
-
-        $this->assertEquals($expected, str_replace("\r", '', $b));
+        self::assertSame($expected, (string) $b);
     }
 
-    public function testSerializesFilesWithCustomHeadersAndMultipleValues()
+    public function testSerializesFilesWithCustomHeadersAndMultipleValues(): void
     {
-        $f1 = Psr7\FnStream::decorate(Psr7\stream_for('foo'), [
-            'getMetadata' => function () {
+        $f1 = Psr7\FnStream::decorate(Psr7\Utils::streamFor('foo'), [
+            'getMetadata' => static function (): string {
                 return '/foo/bar.txt';
             }
         ]);
 
-        $f2 = Psr7\FnStream::decorate(Psr7\stream_for('baz'), [
-            'getMetadata' => function () {
+        $f2 = Psr7\FnStream::decorate(Psr7\Utils::streamFor('baz'), [
+            'getMetadata' => static function (): string {
                 return '/foo/baz.jpg';
             }
         ]);
@@ -219,24 +283,48 @@ EOT;
             ]
         ], 'boundary');
 
-        $expected = <<<EOT
---boundary
-x-foo: bar
-content-disposition: custom
-Content-Length: 3
-Content-Type: text/plain
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "x-foo: bar\r\n",
+            "content-disposition: custom\r\n",
+            "Content-Length: 3\r\n",
+            "Content-Type: text/plain\r\n",
+            "\r\n",
+            "foo\r\n",
+            "--boundary\r\n",
+            "cOntenT-Type: custom\r\n",
+            "Content-Disposition: form-data; name=\"foo\"; filename=\"baz.jpg\"\r\n",
+            "Content-Length: 3\r\n",
+            "\r\n",
+            "baz\r\n",
+            "--boundary--\r\n",
+        ]);
 
-foo
---boundary
-cOntenT-Type: custom
-Content-Disposition: form-data; name="foo"; filename="baz.jpg"
-Content-Length: 3
+        self::assertSame($expected, (string) $b);
+    }
 
-baz
---boundary--
+    public function testCanCreateWithNoneMetadataStreamField(): void
+    {
+        $str = 'dummy text';
+        $a = Psr7\Utils::streamFor(static function () use ($str): string {
+            return $str;
+        });
+        $b = new Psr7\LimitStream($a, \strlen($str));
+        $c = new MultipartStream([
+            [
+                'name'     => 'foo',
+                'contents' => $b,
+            ],
+        ], 'boundary');
 
-EOT;
+        $expected = \implode('', [
+            "--boundary\r\n",
+            "Content-Disposition: form-data; name=\"foo\"\r\n",
+            "\r\n",
+            $str . "\r\n",
+            "--boundary--\r\n",
+        ]);
 
-        $this->assertEquals($expected, str_replace("\r", '', $b));
+        self::assertSame($expected, (string)$c);
     }
 }

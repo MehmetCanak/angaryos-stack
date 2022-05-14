@@ -41,7 +41,7 @@ the query until there are no more rows:
 
     <?php
 
-    while ($row = $stmt->fetch()) {
+    while (($row = $stmt->fetchAssociative()) !== false) {
         echo $row['headline'];
     }
 
@@ -89,11 +89,13 @@ are then replaced by their actual values in a second step (execute).
     $sql = "SELECT * FROM articles WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bindValue(1, $id);
-    $stmt->execute();
+    $resultSet = $stmt->executeQuery();
 
-Placeholders in prepared statements are either simple positional question marks (?) or named labels starting with
-a double-colon (:name1). You cannot mix the positional and the named approach. The approach
-using question marks is called positional, because the values are bound in order from left to right
+Placeholders in prepared statements are either simple positional question marks (``?``) or named labels starting with
+a colon (e.g. ``:name1``). You cannot mix the positional and the named approach. You have to bind a parameter
+to each placeholder.
+
+The approach using question marks is called positional, because the values are bound in order from left to right
 to any question mark found in the previously prepared SQL query. That is why you specify the
 position of the variable to bind into the ``bindValue()`` method:
 
@@ -106,7 +108,7 @@ position of the variable to bind into the ``bindValue()`` method:
     $stmt = $conn->prepare($sql);
     $stmt->bindValue(1, $id);
     $stmt->bindValue(2, $status);
-    $stmt->execute();
+    $resultSet = $stmt->executeQuery();
 
 Named parameters have the advantage that their labels can be re-used and only need to be bound once:
 
@@ -118,7 +120,7 @@ Named parameters have the advantage that their labels can be re-used and only ne
     $sql = "SELECT * FROM users WHERE name = :name OR username = :name";
     $stmt = $conn->prepare($sql);
     $stmt->bindValue("name", $name);
-    $stmt->execute();
+    $resultSet = $stmt->executeQuery();
 
 The following section describes the API of Doctrine DBAL with regard to prepared statements.
 
@@ -142,7 +144,7 @@ use prepared statements:
     SQL query, bind the given params with their binding types and execute the query.
     This method returns the executed prepared statement for iteration and is useful
     for SELECT statements.
--   ``executeUpdate($sql, $params, $types)`` - Create a prepared statement for the passed
+-   ``executeStatement($sql, $params, $types)`` - Create a prepared statement for the passed
     SQL query, bind the given params with their binding types and execute the query.
     This method returns the number of affected rows by the executed query and is useful
     for UPDATE, DELETE and INSERT statements.
@@ -157,20 +159,31 @@ and methods to retrieve data from a statement.
 -   ``bindParam($pos, &$param, $type)`` - Bind a given reference to the positional or
     named parameter in the prepared statement.
 
-If you are finished with binding parameters you have to call ``execute()`` on the statement, which
-will trigger a query to the database. After the query is finished you can access the results
-of this query using the fetch API of a statement:
+If you are finished with binding parameters you have to call ``executeQuery()`` on the statement,
+which will trigger a query to the database. After the query is finished, a ``Doctrine\DBAL\Result``
+instance is returned and you can access the results of this query using the fetch API of the result:
 
--   ``fetch($fetchStyle)`` - Retrieves the next row from the statement or false if there are none.
+-   ``fetchNumeric()`` - Retrieves the next row from the statement or false if there are none.
+    The row is fetched as an array with numeric keys where the columns appear in the same order as
+    they were specified in the executed ``SELECT`` query.
     Moves the pointer forward one row, so that consecutive calls will always return the next row.
--   ``fetchColumn($column)`` - Retrieves only one column of the next row specified by column index.
+-   ``fetchAssociative()`` - Retrieves the next row from the statement or false if there are none.
+    The row is fetched as an associative array where the keys represent the column names as
+    specified in the executed ``SELECT`` query.
     Moves the pointer forward one row, so that consecutive calls will always return the next row.
--   ``fetchAll($fetchStyle)`` - Retrieves all rows from the statement.
+-   ``fetchOne()`` - Retrieves the value of the first column of the next row from the statement
+    or false if there are none.
+    Moves the pointer forward one row, so that consecutive calls will always return the next row.
+-   ``fetchAllNumeric()`` - Retrieves all rows from the statement as arrays with numeric keys.
+-   ``fetchAllAssociative()`` - Retrieves all rows from the statement as associative arrays.
+-   ``fetchFirstColumn()`` - Retrieves the value of the first column of all rows.
 
-The fetch API of a prepared statement obviously works only for ``SELECT`` queries.
+The fetch API of a prepared statement obviously works only for ``SELECT`` queries. If you want to
+execute a statement that does not yield a result set, like ``INSERT``, ``UPDATE`` or ``DELETE``
+for instance, you might want to call ``executeStatement()`` instead of ``executeQuery()``.
 
 If you find it tedious to write all the prepared statement code you can alternatively use
-the ``Doctrine\DBAL\Connection#executeQuery()`` and ``Doctrine\DBAL\Connection#executeUpdate()``
+the ``Doctrine\DBAL\Connection#executeQuery()`` and ``Doctrine\DBAL\Connection#executeStatement()``
 methods. See the API section below on details how to use them.
 
 Additionally there are lots of convenience methods for data-retrieval and manipulation
@@ -199,7 +212,7 @@ to the appropriate vendors database format:
     $date = new \DateTime("2011-03-05 14:00:21");
     $stmt = $conn->prepare("SELECT * FROM articles WHERE publish_date > ?");
     $stmt->bindValue(1, $date, "datetime");
-    $stmt->execute();
+    $resultSet = $stmt->executeQuery();
 
 If you take a look at ``Doctrine\DBAL\Types\DateTimeType`` you will see that
 parts of the conversion are delegated to a method on the current database platform,
@@ -208,7 +221,7 @@ which means this code works independent of the database you are using.
 .. note::
 
     Be aware this type conversion only works with ``Statement#bindValue()``,
-    ``Connection#executeQuery()`` and ``Connection#executeUpdate()``. It
+    ``Connection#executeQuery()`` and ``Connection#executeStatement()``. It
     is not supported to pass a doctrine type name to ``Statement#bindParam()``,
     because this would not work with binding by reference.
 
@@ -236,7 +249,7 @@ Since you are using an ``IN`` expression you would really like to use it in the 
     $stmt = $conn->prepare('SELECT * FROM articles WHERE id IN (?)');
     // THIS WILL NOT WORK:
     $stmt->bindValue(1, array(1, 2, 3, 4, 5, 6));
-    $stmt->execute();
+    $resultSet = $stmt->executeQuery();
 
 Implementing a generic way to handle this kind of query is tedious work. This is why most
 developers fallback to inserting the parameters directly into the query, which can open
@@ -286,7 +299,7 @@ This is much more complicated and is ugly to write generically.
 .. note::
 
     The parameter list support only works with ``Doctrine\DBAL\Connection::executeQuery()``
-    and ``Doctrine\DBAL\Connection::executeUpdate()``, NOT with the binding methods of
+    and ``Doctrine\DBAL\Connection::executeStatement()``, NOT with the binding methods of
     a prepared statement.
 
 API
@@ -307,19 +320,19 @@ Prepare a given SQL statement and return the
 
     <?php
     $statement = $conn->prepare('SELECT * FROM user');
-    $statement->execute();
-    $users = $statement->fetchAll();
+    $resultSet = $statement->executeQuery();
+    $users = $resultSet->fetchAllAssociative();
 
     /*
     array(
       0 => array(
         'username' => 'jwage',
-        'password' => 'changeme'
+        'email' => 'j.wage@example.com'
       )
     )
     */
 
-executeUpdate()
+executeStatement()
 ~~~~~~~~~~~~~~~
 
 Executes a prepared statement with the given SQL and parameters and
@@ -328,7 +341,7 @@ returns the affected rows count:
 .. code-block:: php
 
     <?php
-    $count = $conn->executeUpdate('UPDATE user SET username = ? WHERE id = ?', array('jwage', 1));
+    $count = $conn->executeStatement('UPDATE user SET username = ? WHERE id = ?', array('jwage', 1));
     echo $count; // 1
 
 The ``$types`` variable contains the PDO or Doctrine Type constants
@@ -340,18 +353,18 @@ executeQuery()
 ~~~~~~~~~~~~~~
 
 Creates a prepared statement for the given SQL and passes the
-parameters to the execute method, then returning the statement:
+parameters to the executeQuery method, then returning the result set:
 
 .. code-block:: php
 
     <?php
-    $statement = $conn->executeQuery('SELECT * FROM user WHERE username = ?', array('jwage'));
-    $user = $statement->fetch();
+    $resultSet = $conn->executeQuery('SELECT * FROM user WHERE username = ?', array('jwage'));
+    $user = $resultSet->fetchAssociative();
 
     /*
     array(
       0 => 'jwage',
-      1 => 'changeme'
+      1 => 'j.wage@example.com'
     )
     */
 
@@ -360,70 +373,137 @@ to perform necessary type conversions between actual input
 parameters and expected database values. See the
 :ref:`Types <mappingMatrix>` section for more information.
 
-fetchAll()
-~~~~~~~~~~
+fetchAllAssociative()
+~~~~~~~~~~~~~~~~~~~~~
 
 Execute the query and fetch all results into an array:
 
 .. code-block:: php
 
     <?php
-    $users = $conn->fetchAll('SELECT * FROM user');
+    $users = $conn->fetchAllAssociative('SELECT * FROM user');
 
     /*
     array(
       0 => array(
         'username' => 'jwage',
-        'password' => 'changeme'
+        'email' => 'j.wage@example.com'
       )
     )
     */
 
-fetchArray()
-~~~~~~~~~~~~
+fetchAllKeyValue()
+~~~~~~~~~~~~~~~~~~
+
+Execute the query and fetch the first two columns into an associative array as keys and values respectively:
+
+.. code-block:: php
+
+    <?php
+    $users = $conn->fetchAllKeyValue('SELECT username, email FROM user');
+
+    /*
+    array(
+      'jwage' => 'j.wage@example.com',
+    )
+    */
+
+.. note::
+   All additional columns will be ignored and are only allowed to be selected by DBAL for its internal purposes.
+
+fetchAllAssociativeIndexed()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execute the query and fetch the data as an associative array where the key represents the first column and the value is
+an associative array of the rest of the columns and their values:
+
+.. code-block:: php
+
+    <?php
+    $users = $conn->fetchAllAssociativeIndexed('SELECT id, username, email FROM user');
+
+    /*
+    array(
+        1 => array(
+          'username' => 'jwage',
+          'email' => 'j.wage@example.com'
+        )
+    )
+    */
+
+fetchNumeric()
+~~~~~~~~~~~~~~
 
 Numeric index retrieval of first result row of the given query:
 
 .. code-block:: php
 
     <?php
-    $user = $conn->fetchArray('SELECT * FROM user WHERE username = ?', array('jwage'));
+    $user = $conn->fetchNumeric('SELECT * FROM user WHERE username = ?', array('jwage'));
 
     /*
     array(
       0 => 'jwage',
-      1 => 'changeme'
+      1 => 'j.wage@example.com'
     )
     */
 
-fetchColumn()
-~~~~~~~~~~~~~
+fetchOne()
+~~~~~~~~~~
 
-Retrieve only the given column of the first result row.
+Retrieve only the value of the first column of the first result row.
 
 .. code-block:: php
 
     <?php
-    $username = $conn->fetchColumn('SELECT username FROM user WHERE id = ?', array(1), 0);
+    $username = $conn->fetchOne('SELECT username FROM user WHERE id = ?', array(1), 0);
     echo $username; // jwage
 
-fetchAssoc()
-~~~~~~~~~~~~
+fetchAssociative()
+~~~~~~~~~~~~~~~~~~
 
-Retrieve assoc row of the first result row.
+Retrieve associative array of the first result row.
 
 .. code-block:: php
 
     <?php
-    $user = $conn->fetchAssoc('SELECT * FROM user WHERE username = ?', array('jwage'));
+    $user = $conn->fetchAssociative('SELECT * FROM user WHERE username = ?', array('jwage'));
     /*
     array(
       'username' => 'jwage',
-      'password' => 'changeme'
+      'email' => 'j.wage@example.com'
     )
     */
 
 There are also convenience methods for data manipulation queries:
+
+iterateKeyValue()
+~~~~~~~~~~~~~~~~~
+
+Execute the query and iterate over the first two columns as keys and values respectively:
+
+.. code-block:: php
+
+    <?php
+    foreach ($conn->iterateKeyValue('SELECT username, email FROM user') as $username => $email) {
+        // ...
+    }
+
+.. note::
+   All additional columns will be ignored and are only allowed to be selected by DBAL for its internal purposes.
+
+iterateAssociativeIndexed()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execute the query and iterate over the result with the key representing the first column and the value being
+an associative array of the rest of the columns and their values:
+
+.. code-block:: php
+
+    <?php
+    foreach ($conn->iterateAssociativeIndexed('SELECT id, username, email FROM user') as $id => $data) {
+        // ...
+    }
 
 delete()
 ~~~~~~~~~

@@ -12,7 +12,6 @@ $data = [];
 $tempData = $pipe['excelData'];
 unset($pipe['excelData']);
 
-
 foreach($tempData as $pageName => $pageData)
 {
     if($pageData[0][0] == NULL) continue;
@@ -22,7 +21,7 @@ foreach($tempData as $pageName => $pageData)
         'columns' => NULL,
         'data' => []
     ];
-    
+     
     foreach($pageData as $i => $row)
     {
         if($i == 0) 
@@ -30,12 +29,17 @@ foreach($tempData as $pageName => $pageData)
         else
         {
             $temp = [];
-            foreach($row as $i => $colData)
-                $temp[$data[$pageName]['columns'][$i]] = $colData;
+            $l = 'A';
+            foreach($row as $j => $colData)
+            {
+                $colName = $data[$pageName]['columns'][$j];
+                if($colName == NULL || strlen($colName) == 0) $colName = $l;
+                $temp[$colName] = $colData;
+                $l++;
+            }
             
             array_push($data[$pageName]['data'], $temp);
-        }
-            
+        }   
     }
 }
         

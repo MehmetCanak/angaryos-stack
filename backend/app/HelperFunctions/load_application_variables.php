@@ -36,3 +36,5 @@ try
     @define('DB_PROJECTION', 7932);
     $pipe['SHOW_DELETED_TABLES_AND_COLUMNS'] = SHOW_DELETED_TABLES_AND_COLUMNS;
 } catch (\Exception $exc) {}
+
+$pipe['translateData'] = require('/var/www/config/language/main.php');

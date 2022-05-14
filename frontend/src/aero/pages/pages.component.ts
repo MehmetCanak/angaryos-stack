@@ -35,6 +35,8 @@ export class PagesComponent
   isESignUserTrue = false;
   eSignTimeOut = 1000 * 60 * 5;
   
+  lang = 1;
+  
   announcements = [];
   newAnnouncements = false;
   
@@ -71,8 +73,50 @@ export class PagesComponent
     this.pageRefreshOperations();
 
     this.generalHelper.saveLastPage(window.location.href);
-    BaseHelper.writeToPipe('basePageComponent', this);    
+    BaseHelper.writeToPipe('basePageComponent', this);   
     
+    try { this.fillLanguage(); } catch (error) { } 
+  }
+  
+  fillLanguage()
+  {
+    switch(BaseHelper.loggedInUserInfo.user.language)
+    {
+      case "tr": 
+        this.lang = 1;
+        break;
+      case "en": 
+        this.lang = 2;
+        break;
+    }  
+  }
+  
+  async langChange(id)
+  {
+    var url = this.sessionHelper.getBackendUrlWithToken()+"language/"+id;
+    var th = this;
+    await this.sessionHelper.doHttpRequest("GET", url) 
+    .then((data) => 
+    {
+      try 
+      {
+        if(data["message"] == "OK")
+        {
+          BaseHelper.loggedInUserInfo = null;
+          th.sessionHelper.getLoggedInUserInfo()
+          .then((data) =>
+          {          
+            setTimeout(function () { window.location.reload(); }, 500);
+          });
+        }
+        else th.messageHelper.sweetAlert("Dil güncellme esnasında hata oluştu!", "Hata!", "error");
+      }
+      catch (error) 
+      {
+        th.messageHelper.sweetAlert("Dil güncellme esnasında hata oluştu!", "Hata!", "error");
+      }
+    })
+    .catch((e) => {  });
   }
   
   async pageRefreshOperations()
@@ -283,16 +327,16 @@ export class PagesComponent
 
     Swal.fire(
     {
-      title: 'Elektronik İmza',
+      title: 'Elektronik İmza'.tr(),
       html: `<br><p style="text-align: justify;"> `+sign['signed_text']+` </p><br>
-      <input value="`+remembered+`" type="password" id="ePassword" class="swal2-input" autocomplete="off" placeholder="E-imza şifreniz"><br>
+      <input value="`+remembered+`" type="password" id="ePassword" class="swal2-input" autocomplete="off" placeholder="`+'E-imza şifreniz'.tr()+`"><br>
       <table width="100%"><tr><td>
-        <input `+checked+` type="checkbox" name="eRemember" id="eRemember"> Hatırla 
+        <input `+checked+` type="checkbox" name="eRemember" id="eRemember"> `+'Hatırla'.tr()+`
       </td><td align="right">
-        <span style="color: crimson; font-weight: bolder; font-size: 14;">Tümünü İmzala (`+count+`)</span> <input type="checkbox" name="eAll" id="eAll">
+        <span style="color: crimson; font-weight: bolder; font-size: 14;">`+'Tümünü İmzala'.tr()+`(`+count+`)</span> <input type="checkbox" name="eAll" id="eAll">
       </td></tr></table>`,
-      confirmButtonText: 'İmzala',
-      cancelButtonText: 'İmzalamayı Reddet',
+      confirmButtonText: 'İmzala'.tr(),
+      cancelButtonText: 'İmzalamayı Reddet'.tr(),
       customClass: 
       {
         confirmButton: 'btn btn-success',
@@ -305,7 +349,7 @@ export class PagesComponent
       preConfirm: () => 
       {
         var password = Swal.getPopup().querySelector('#ePassword')['value'];
-        if(password.length == 0) Swal.showValidationMessage(`E-imza boş geçilemez`);
+        if(password.length == 0) Swal.showValidationMessage('E-imza boş geçilemez'.tr());
       }
     })
     .then( async (result) => 
@@ -597,6 +641,10 @@ export class PagesComponent
   ngAfterViewInit() 
   {    
     this.aeroThemeHelper.loadPageScripts(); 
+    setTimeout(() =>
+    {
+        if(!BaseHelper.isBrowser) $('#searchWords').css('font-size', '18px');
+    }, 1000);
   }
 
   search()
@@ -604,14 +652,11 @@ export class PagesComponent
     var words = $('#searchWords').val();
     if(words == null || words.length == 0)
     {
-      this.messageHelper.toastMessage("Aramak için birşeyler yazmalısınız!");
+      this.messageHelper.sweetAlert("Aramak için birşeyler yazmalısınız!", "Arama", "warning");
       return;
     }
     
     this.generalHelper.navigate("search/"+words);
-
-    //window.location.href = BaseHelper.baseUrl+"search/"+words;
-    //window.location.reload();
   }
 
   changeTheme(name)

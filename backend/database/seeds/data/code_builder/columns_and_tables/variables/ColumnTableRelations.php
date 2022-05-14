@@ -112,6 +112,13 @@ $department_id_relation =
     'relation_display_column' => 'name_basic',
 ];
 
+$language_id_relation = 
+[
+    'relation_sql' => 'select id, display_name from languages',
+    'relation_source_column' => 'id',
+    'relation_display_column' => 'display_name',
+];
+
 $up_column_id_relation =
 [
     'relation_sql' => 'select id, name_basic from up_columns',
@@ -233,6 +240,7 @@ $column_table_relations =
     'join_table_id' => $table_id_relation,
     'join_column_id' => $column_id_relation,
     'department_id' => $department_id_relation,
+    'language_id' => $language_id_relation,
     'department_ids' => $department_id_relation,
     'manager_id' => $user_id_relation,
     'column_array_type_id' => $column_array_type_id_relation,

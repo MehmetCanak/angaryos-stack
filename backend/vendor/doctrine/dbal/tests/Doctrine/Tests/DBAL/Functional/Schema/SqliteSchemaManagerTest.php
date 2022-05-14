@@ -2,45 +2,50 @@
 
 namespace Doctrine\Tests\DBAL\Functional\Schema;
 
-use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Connection;
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\SqlitePlatform;
 use Doctrine\DBAL\Schema;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\BlobType;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
-use SQLite3;
-use function array_map;
+use Doctrine\Tests\DBAL\AssertionCompatibility;
+
 use function dirname;
-use function extension_loaded;
-use function version_compare;
 
 class SqliteSchemaManagerTest extends SchemaManagerFunctionalTestCase
 {
+    use AssertionCompatibility;
+
+    protected function supportsPlatform(AbstractPlatform $platform): bool
+    {
+        return $platform instanceof SqlitePlatform;
+    }
+
     /**
      * SQLITE does not support databases.
      */
-    public function testListDatabases() : void
+    public function testListDatabases(): void
     {
-        $this->expectException(DBALException::class);
+        $this->expectException(Exception::class);
 
         $this->schemaManager->listDatabases();
     }
 
-    public function testCreateAndDropDatabase() : void
+    public function testCreateAndDropDatabase(): void
     {
         $path = dirname(__FILE__) . '/test_create_and_drop_sqlite_database.sqlite';
 
         $this->schemaManager->createDatabase($path);
         self::assertFileExists($path);
         $this->schemaManager->dropDatabase($path);
-        self::assertFileNotExists($path);
+        self::assertFileDoesNotExist($path);
     }
 
-    /**
-     * @group DBAL-1220
-     */
-    public function testDropsDatabaseWithActiveConnections() : void
+    public function testDropsDatabaseWithActiveConnections(): void
     {
         $this->schemaManager->dropAndCreateDatabase('test_drop_database');
 
@@ -49,21 +54,22 @@ class SqliteSchemaManagerTest extends SchemaManagerFunctionalTestCase
         $params           = $this->connection->getParams();
         $params['dbname'] = 'test_drop_database';
 
-        $user     = $params['user'] ?? null;
-        $password = $params['password'] ?? null;
+        $user          = $params['user'] ?? null;
+        $password      = $params['password'] ?? null;
+        $driverOptions = $params['driverOptions'] ?? [];
 
-        $connection = $this->connection->getDriver()->connect($params, $user, $password);
+        $connection = $this->connection->getDriver()->connect($params, $user, $password, $driverOptions);
 
         self::assertInstanceOf(Connection::class, $connection);
 
         $this->schemaManager->dropDatabase('test_drop_database');
 
-        self::assertFileNotExists('test_drop_database');
+        self::assertFileDoesNotExist('test_drop_database');
 
         unset($connection);
     }
 
-    public function testRenameTable() : void
+    public function testRenameTable(): void
     {
         $this->createTestTable('oldname');
         $this->schemaManager->renameTable('oldname', 'newname');
@@ -73,7 +79,7 @@ class SqliteSchemaManagerTest extends SchemaManagerFunctionalTestCase
         self::assertNotContains('oldname', $tables);
     }
 
-    public function createListTableColumns() : Table
+    public function createListTableColumns(): Table
     {
         $table = parent::createListTableColumns();
         $table->getColumn('id')->setAutoincrement(true);
@@ -81,7 +87,7 @@ class SqliteSchemaManagerTest extends SchemaManagerFunctionalTestCase
         return $table;
     }
 
-    public function testListForeignKeysFromExistingDatabase() : void
+    public function testListForeignKeysFromExistingDatabase(): void
     {
         $this->connection->exec(<<<EOS
 CREATE TABLE user (
@@ -98,7 +104,7 @@ EOS
             new Schema\ForeignKeyConstraint(
                 ['log'],
                 'log',
-                [null],
+                [],
                 'FK_3',
                 ['onUpdate' => 'SET NULL', 'onDelete' => 'NO ACTION', 'deferrable' => false, 'deferred' => false]
             ),
@@ -121,7 +127,7 @@ EOS
         self::assertEquals($expected, $this->schemaManager->listTableForeignKeys('user'));
     }
 
-    public function testColumnCollation() : void
+    public function testColumnCollation(): void
     {
         $table = new Schema\Table('test_collation');
         $table->addColumn('id', 'integer');
@@ -138,7 +144,7 @@ EOS
         self::assertEquals('NOCASE', $columns['bar']->getPlatformOption('collation'));
     }
 
-    public function testListTableWithBinary() : void
+    public function testListTableWithBinary(): void
     {
         $tableName = 'test_binary_table';
 
@@ -159,37 +165,7 @@ EOS
         self::assertFalse($table->getColumn('column_binary')->getFixed());
     }
 
-    public function testNonDefaultPKOrder() : void
-    {
-        if (! extension_loaded('sqlite3')) {
-            $this->markTestSkipped('This test requires the SQLite3 extension.');
-        }
-
-        $version = SQLite3::version();
-        if (version_compare($version['versionString'], '3.7.16', '<')) {
-            $this->markTestSkipped('This version of sqlite doesn\'t return the order of the Primary Key.');
-        }
-        $this->connection->exec(<<<EOS
-CREATE TABLE non_default_pk_order (
-    id INTEGER,
-    other_id INTEGER,
-    PRIMARY KEY(other_id, id)
-)
-EOS
-        );
-
-        $tableIndexes = $this->schemaManager->listTableIndexes('non_default_pk_order');
-
-         self::assertCount(1, $tableIndexes);
-
-        self::assertArrayHasKey('primary', $tableIndexes, 'listTableIndexes() has to return a "primary" array key.');
-        self::assertEquals(['other_id', 'id'], array_map('strtolower', $tableIndexes['primary']->getColumns()));
-    }
-
-    /**
-     * @group DBAL-1779
-     */
-    public function testListTableColumnsWithWhitespacesInTypeDeclarations() : void
+    public function testListTableColumnsWithWhitespacesInTypeDeclarations(): void
     {
         $sql = <<<SQL
 CREATE TABLE dbal_1779 (
@@ -216,10 +192,12 @@ SQL;
 
     /**
      * @dataProvider getDiffListIntegerAutoincrementTableColumnsData
-     * @group DBAL-924
      */
-    public function testDiffListIntegerAutoincrementTableColumns(string $integerType, bool $unsigned, bool $expectedComparatorDiff) : void
-    {
+    public function testDiffListIntegerAutoincrementTableColumns(
+        string $integerType,
+        bool $unsigned,
+        bool $expectedComparatorDiff
+    ): void {
         $tableName = 'test_int_autoincrement_table';
 
         $offlineTable = new Table($tableName);
@@ -229,10 +207,11 @@ SQL;
         $this->schemaManager->dropAndCreateTable($offlineTable);
 
         $onlineTable = $this->schemaManager->listTableDetails($tableName);
-        $comparator  = new Schema\Comparator();
-        $diff        = $comparator->diffTable($offlineTable, $onlineTable);
+
+        $diff = (new Comparator())->diffTable($offlineTable, $onlineTable);
 
         if ($expectedComparatorDiff) {
+            self::assertNotFalse($diff);
             self::assertEmpty($this->schemaManager->getDatabasePlatform()->getAlterTableSQL($diff));
         } else {
             self::assertFalse($diff);
@@ -242,7 +221,7 @@ SQL;
     /**
      * @return mixed[][]
      */
-    public static function getDiffListIntegerAutoincrementTableColumnsData() : iterable
+    public static function getDiffListIntegerAutoincrementTableColumnsData(): iterable
     {
         return [
             ['smallint', false, true],
@@ -254,10 +233,7 @@ SQL;
         ];
     }
 
-    /**
-     * @group DBAL-2921
-     */
-    public function testPrimaryKeyNoAutoIncrement() : void
+    public function testPrimaryKeyNoAutoIncrement(): void
     {
         $table = new Schema\Table('test_pk_auto_increment');
         $table->addColumn('id', 'integer');
@@ -279,7 +255,7 @@ SQL;
         $this->assertEquals(1, $lastUsedIdAfterDelete);
     }
 
-    public function testOnlyOwnCommentIsParsed() : void
+    public function testOnlyOwnCommentIsParsed(): void
     {
         $table = new Table('own_column_comment');
         $table->addColumn('col1', 'string', ['length' => 16]);

@@ -62,6 +62,7 @@ $column_name_display_name_map =
     'join_column_id' => 'Join Kolonu',
     'location' => 'Konum',
     'department_id' => 'Müdürlüğü',
+    'language_id' => 'Dili',
     'manager_id' => 'Müdür',
     'column_array_type_id' => 'Kolon Dizi Tipi',
     'column_data_source_id' => 'Kolon Veri Kaynağı',
@@ -69,6 +70,7 @@ $column_name_display_name_map =
     'column_gui_trigger_ids' => 'Kolon Arayüz Tetiklemeleri',
     'error_message' => 'Hata Mesajı',
     'profile_picture' => 'Profil Fotoğrafı',
+    'pictures' => 'Fotoğraf(lar)',
     
     'log' => 'Log',
     
@@ -160,7 +162,9 @@ $column_name_display_name_map =
     'start_time' => 'Başlama Zamanı',
     'end_time' => 'Bitiş Zamanı',
     'phone' => 'Telefon',
-    'last_worked_at' => 'Son Çalışma Zamanı'
+    'last_worked_at' => 'Son Çalışma Zamanı',
+        
+    'rtl' => 'RTL',
 ];
 
 

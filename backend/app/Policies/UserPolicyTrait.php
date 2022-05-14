@@ -205,7 +205,7 @@ trait UserPolicyTrait
         if($permissions == NULL) return FALSE;
         
         $keys = array_keys((array)$permissions);
-		//if(isset($permissions->{$permitName}) && !$permissions->{$permitName}) return FALSE;
+        
         if(in_array($permitName, $keys) && !$permissions->{$permitName}) return FALSE;
 		
         return TRUE;
@@ -352,10 +352,11 @@ trait UserPolicyTrait
 
         foreach($filterIds as $filterId)
         {
-            $sqlOrJson = get_attr_from_cache('data_filters', 'id', $filterId, 'sql_code');
-
-            $decoded = @json_decode($sqlOrJson);
-            if(!$decoded) $this->selectColumnDataValidate($params);
+            $sqlOrJson = get_attr_from_cache('data_filters', 'id', $filterId, 'sql_code');            
+            $sqlOrJson = helper('reverse_clear_string_for_db', $sqlOrJson);
+            
+            $decoded = @json_decode($sqlOrJson);            
+            if($decoded) $this->selectColumnDataValidate($params);
             else
             {
                 dd_live(FALSE, 'adam hakketen bu filreye girecek mi? yani bu filtre bu tablo ve kolon aramasi için geçerli mi?', $sqlOrJson, @json_decode($sqlOrJson));
@@ -404,6 +405,7 @@ trait UserPolicyTrait
             $control = @json_decode($data);
             if($control)
             {
+                if(!is_array($control)) $control = [$control];
                 foreach($control as $item)
                 {
                     $finded = FALSE;
@@ -433,7 +435,7 @@ trait UserPolicyTrait
 
 
     public function selectColumnDataValidate($params)
-    {
+    {            
         \Request::merge(['search' => '***']); 
         $params->ctrlParams = $params->ctrl->getValidatedParamsForSelectColumnData($params->table, $params->column); 
         $params->ctrlParams->limit = 10000;
@@ -446,17 +448,18 @@ trait UserPolicyTrait
     }
 
     public function selectColumnDataValidateForOneToOne($params)
-    {
+    {        
         global $pipe;
 
         $data = \Request::input($params->column->name);
         if(strlen($data) == 0 || $data == '[]') return;
-
+        
         \Request::merge(['search' => $data]);
         $params->ctrlParams->search = $data;
 
-        //$pipe['addedJoins'] = [];
+        $pipe['columnNameForSelectColummnDataRequestEnjection'] = $params->column->name;
         $response = \Event::dispatch('record.selectColummnData.requested', [$params->column, $params->ctrlParams])[0];
+        unset($pipe['columnNameForSelectColummnDataRequestEnjection']);
 
         foreach($response['results'] as $rec)
             if($rec['id'] == $data) return;
@@ -481,8 +484,10 @@ trait UserPolicyTrait
                 \Request::merge(['search' => $item]);
                 $params->ctrlParams->search = $item;
 
-                //$pipe['addedJoins'] = [];
+                $pipe['columnNameForSelectColummnDataRequestEnjection'] = $params->column->name;
                 $response = \Event::dispatch('record.selectColummnData.requested', [$params->column, $params->ctrlParams])[0];
+                unset($pipe['columnNameForSelectColummnDataRequestEnjection']);
+                
                 foreach($response['results'] as $rec)
                     if($rec['id'] == $item)
                     {

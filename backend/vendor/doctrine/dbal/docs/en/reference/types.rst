@@ -157,6 +157,13 @@ or ``null`` if no data is present.
     This can lead to type inconsistencies when reverse engineering the
     type from the database.
 
+ascii_string
+++++++++++++
+
+Similar to the ``string`` type but for binding non-unicode data. This type
+should be used with database vendors where a binding type mismatch
+can trigger an implicit cast and lead to performance problems.
+
 text
 ++++
 
@@ -418,8 +425,18 @@ json
 Maps and converts array data based on PHP's JSON encoding functions.
 If you know that the data to be stored always is in a valid UTF-8
 encoded JSON format string, you should consider using this type.
-Values retrieved from the database are always converted to PHP's ``array`` or
-``null`` types using PHP's ``json_decode()`` function.
+Values retrieved from the database are always converted to PHP's
+native types using PHP's ``json_decode()`` function.
+JSON objects are always converted to PHP associative arrays. 
+
+.. note::
+
+    The ``json`` type doesn't preserve the type of PHP objects.
+    PHP objects will always be encoded as (anonymous) JSON objects.
+    JSON objects will always be decoded as PHP associative arrays.
+
+    To preserve the type of PHP objects, consider using
+    `Doctrine JSON ODM <https://github.com/dunglas/doctrine-json-odm>`_.
 
 .. note::
 
@@ -607,6 +624,9 @@ Please also notice the mapping specific footnotes for additional information.
 |                   |               |                          |         +----------------------------------------------------------+
 |                   |               |                          |         | ``NCHAR(n)`` [4]_                                        |
 +-------------------+---------------+--------------------------+---------+----------------------------------------------------------+
+| **ascii_string**  | ``string``    | **SQL Server**           |         | ``VARCHAR(n)``                                           |
+|                   |               |                          |         | ``CHAR(n)``                                              |
++-------------------+---------------+--------------------------+---------+----------------------------------------------------------+
 | **text**          | ``string``    | **MySQL**                | *all*   | ``TINYTEXT`` [17]_                                       |
 |                   |               |                          |         +----------------------------------------------------------+
 |                   |               |                          |         | ``TEXT`` [18]_                                           |
@@ -780,6 +800,34 @@ Please also notice the mapping specific footnotes for additional information.
 |                   |               |                          |         | ``MEDIUMTEXT`` [19]_                                     |
 |                   |               |                          |         +----------------------------------------------------------+
 |                   |               |                          |         | ``LONGTEXT`` [20]_                                       |
+|                   |               +--------------------------+---------+----------------------------------------------------------+
+|                   |               | **PostgreSQL**           | < 9.2   | ``TEXT`` [1]_                                            |
+|                   |               |                          +---------+----------------------------------------------------------+
+|                   |               |                          | < 9.4   | ``JSON``                                                 |
+|                   |               |                          +---------+----------------------------------------------------------+
+|                   |               |                          | >= 9.4  | ``JSON`` [21]_                                           |
+|                   |               |                          |         +----------------------------------------------------------+
+|                   |               |                          |         | ``JSONB`` [22]_                                          |
+|                   |               +--------------------------+---------+----------------------------------------------------------+
+|                   |               | **SQL Anywhere**         | *all*   | ``TEXT`` [1]_                                            |
+|                   |               +--------------------------+         |                                                          |
+|                   |               | **Drizzle**              |         |                                                          |
+|                   |               +--------------------------+---------+----------------------------------------------------------+
+|                   |               | **Oracle**               | *all*   | ``CLOB`` [1]_                                            |
+|                   |               +--------------------------+         |                                                          |
+|                   |               | **SQLite**               |         |                                                          |
+|                   |               +--------------------------+---------+----------------------------------------------------------+
+|                   |               | **SQL Server**           | *all*   | ``VARCHAR(MAX)`` [1]_                                    |
++-------------------+---------------+--------------------------+---------+----------------------------------------------------------+
+| **json**          | ``mixed``     | **MySQL**                | < 5.7   | ``TINYTEXT`` [1]_ [17]_                                  |
+|                   |               |                          |         +----------------------------------------------------------+
+|                   |               |                          |         | ``TEXT`` [1]_ [18]_                                      |
+|                   |               |                          |         +----------------------------------------------------------+
+|                   |               |                          |         | ``MEDIUMTEXT`` [1]_ [19]_                                |
+|                   |               |                          |         +----------------------------------------------------------+
+|                   |               |                          |         | ``LONGTEXT`` [1]_ [20]_                                  |
+|                   |               |                          +---------+----------------------------------------------------------+
+|                   |               |                          | >= 5.7  | ``JSON``                                                 |
 |                   |               +--------------------------+---------+----------------------------------------------------------+
 |                   |               | **PostgreSQL**           | < 9.2   | ``TEXT`` [1]_                                            |
 |                   |               |                          +---------+----------------------------------------------------------+
